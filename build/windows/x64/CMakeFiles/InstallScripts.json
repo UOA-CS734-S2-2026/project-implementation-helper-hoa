@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/cmake_install.cmake",
+		"D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/flutter/cmake_install.cmake",
+		"D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

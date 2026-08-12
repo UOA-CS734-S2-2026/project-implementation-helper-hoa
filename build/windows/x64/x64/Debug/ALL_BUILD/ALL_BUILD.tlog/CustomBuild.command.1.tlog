@@ -1,0 +1,10 @@
+^D:\MAI\734\PROJECT-IMPLEMENTATION-HELPER-HOA\WINDOWS\CMAKELISTS.TXT
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/MAI/734/project-implementation-helper-hoa/windows -BD:/MAI/734/project-implementation-helper-hoa/build/windows/x64 --check-stamp-file D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

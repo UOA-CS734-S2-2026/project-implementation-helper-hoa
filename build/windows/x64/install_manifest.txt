@@ -1,0 +1,13 @@
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/icudtl.dat
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/flutter_windows.dll
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin.json
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/FontManifest.json
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/fonts/MaterialIcons-Regular.otf
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/kernel_blob.bin
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/NativeAssetsManifest.json
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/NOTICES
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/NOTICES.Z
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/shaders/ink_sparkle.frag
+D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/runner/Debug/data/flutter_assets/shaders/stretch_effect.frag

@@ -1,0 +1,10 @@
+^D:\MAI\734\PROJECT-IMPLEMENTATION-HELPER-HOA\BUILD\WINDOWS\X64\CMAKEFILES\DFEF21D914DF8801A970078E8BD9A348\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/MAI/734/project-implementation-helper-hoa/windows -BD:/MAI/734/project-implementation-helper-hoa/build/windows/x64 --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/MAI/734/project-implementation-helper-hoa/build/windows/x64/project_implementation_helper_hoa.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
