@@ -1,91 +1,322 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import 'ask_hoa_page.dart';
-import 'sell_page.dart';
+import '../widgets/app_bottom_nav.dart';
 
-class MyHome extends StatefulWidget {
-  const MyHome({super.key});
+class MyHome extends StatelessWidget {
+  final Widget child;
 
-  @override
-  State<MyHome> createState() => _MyHomeState();
-}
-
-class _MyHomeState extends State<MyHome> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomePageContent(),
-    SellPage(),
-    AskHoaPage(),
-  ];
-
-  final List<String> _titles = const [
-    'Helper Hoa',
-    'Sell',
-    'Ask Hoa',
-  ];
-
-  final List<Color> _colors = const [
-    Colors.green,
-    Colors.orange,
-    Colors.blue,
-  ];
+  const MyHome({
+    super.key,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    int selectedIndex = 0;
+
+    switch (location) {
+      case '/':
+        selectedIndex = 0;
+        break;
+      case '/stock':
+        selectedIndex = 1;
+        break;
+      case '/sell':
+        selectedIndex = 2;
+        break;
+      case '/ask-hoa':
+        selectedIndex = 3;
+        break;
+      case '/profile':
+        selectedIndex = 4;
+        break;
+      default:
+        selectedIndex = 0;
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
-        backgroundColor: _colors[_currentIndex],
-      ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: _colors[_currentIndex],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: 'Sell',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.question_answer),
-            label: 'Ask Hoa',
-          ),
-        ],
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+      body: child,
+      bottomNavigationBar: AppBottomNav(
+        selectedIndex: selectedIndex,
+        onItemSelected: (index) {
+          switch (index) {
+            case 0:
+              context.go('/');
+              break;
+            case 1:
+              context.go('/stock');
+              break;
+            case 2:
+              context.go('/sell');
+              break;
+            case 3:
+              context.go('/ask-hoa');
+              break;
+            case 4:
+              context.go('/profile');
+              break;
+          }
         },
       ),
     );
   }
 }
 
-class HomePageContent extends StatelessWidget {
-  const HomePageContent({super.key});
+class _HomePageContent extends StatelessWidget {
+  const _HomePageContent();
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.0),
-        child: Text(
-          'Welcome to Helper Hoa',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
+    return SafeArea(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(28),
+            bottomRight: Radius.circular(28),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SizedBox(
+                  width: 154,
+                  height: 56,
+                  child: Image.asset(
+                    'assets/logo.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerLeft,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(
+                          Icons.home_repair_service_rounded,
+                          size: 30,
+                          color: Color(0xFF4E6CD6),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  offset: const Offset(0, 46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  onSelected: (value) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(value),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'Notifications',
+                      child: Row(
+                        children: [
+                          Icon(Icons.notifications_none_rounded, color: Color(0xFF4E6CD6)),
+                          SizedBox(width: 10),
+                          Text('Notifications'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'Messages',
+                      child: Row(
+                        children: [
+                          Icon(Icons.message_outlined, color: Color(0xFF4E6CD6)),
+                          SizedBox(width: 10),
+                          Text('Messages'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'Settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings_outlined, color: Color(0xFF4E6CD6)),
+                          SizedBox(width: 10),
+                          Text('Settings'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFDF58),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Color(0xFF4E6CD6),
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF4E6CD6)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF4E6CD6), width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _featureCard({
+    required String title,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF000000),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.arrow_forward_rounded,
+              color: Color(0xFF4E6CD6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockPage extends StatelessWidget {
+  const _StockPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Stock')),
+    );
+  }
+}
+
+class _SellPage extends StatelessWidget {
+  const _SellPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Sell')),
+    );
+  }
+}
+
+class _AskHoaPage extends StatelessWidget {
+  const _AskHoaPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Ask Hoa')),
+    );
+  }
+}
+
+class _ProfilePage extends StatelessWidget {
+  const _ProfilePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Profile')),
     );
   }
 }
