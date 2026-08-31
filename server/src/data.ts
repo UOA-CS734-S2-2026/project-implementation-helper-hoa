@@ -55,3 +55,50 @@ export type HelperHoaStore = {
   createBatch(productId: string, batch: NewBatch): Promise<ProductBatch>;
   createProduct(product: NewProduct): Promise<ProductRecord>;
 };
+
+// function to return the products in alphabetical order
+export function toDocument(record: ProductRecord, order: number) {
+  return { ...record, status: record.totalStock > 0, order };
+}
+
+export function toProductRecord(doc: any): ProductRecord {
+  return {
+    id: doc._id.toString(),
+    sku: doc.sku,
+    name: doc.name,
+    category: doc.category,
+    description: doc.description,
+    costPrice: doc.costPrice,
+    sellingPrice: doc.sellingPrice,
+    taxRate: doc.taxRate,
+    totalStock: doc.totalStock,
+    reorderPoint: doc.reorderPoint,
+    unitOfMeasure: doc.unitOfMeasure,
+    totalSold: doc.totalSold,
+    salesVelocity: doc.salesVelocity,
+    tags: doc.tags || [],
+    status: doc.status,
+    batches: doc.batches || [] 
+  };
+}
+
+export function toUser(doc: any): User {
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    lastName: doc.lastName,
+    role: doc.role, 
+    email: doc.email,
+    phone: doc.phone || "",
+  };
+}
+
+export function toProductBatch(doc: any): ProductBatch {
+  return {
+    batchNumber: doc.batchNumber,
+    quantity: doc.quantity,
+    costPrice: doc.costPrice,
+    expirationDate: new Date(doc.expirationDate), 
+    receivedDate: new Date(doc.receivedDate),
+  };
+}
