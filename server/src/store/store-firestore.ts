@@ -1,11 +1,12 @@
-import { getFirestore } from 'firebase-admin/firestore';
+import { Query, FieldValue } from 'firebase-admin/firestore';
+import { db } from '../config/firebase'; // Adjust path if your firebase.ts is located elsewhere
 import {
     ProductBatch,
     ProductRecord,
     User,
     NewProduct,
     NewBatch,
-} from '../types'
+} from '../types';
 import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser } from './mappers';
 import { HelperHoaStore } from '.';
 
@@ -14,11 +15,11 @@ import { HelperHoaStore } from '.';
 // ==========================================
 
 export class FirebaseHoaStore implements HelperHoaStore {
-  private db = getFirestore();
-
+  
   // Returns products in alphabetical order
   async products(activeOnly?: boolean): Promise<ProductRecord[]> {
-    let query: FirebaseFirestore.Query = this.db.collection('products');
+    // Replaced FirebaseFirestore.Query with direct Query import, and this.db with db
+    let query: Query = db.collection('products');
 
     if (activeOnly) {
       query = query.where('status', '==', 'active');
@@ -32,31 +33,32 @@ export class FirebaseHoaStore implements HelperHoaStore {
   }
 
   async product(id: string): Promise<ProductRecord | undefined> {
-    const doc = await this.db.collection('products').doc(id).get();
+    const doc = await db.collection('products').doc(id).get();
     return doc.exists ? toProductRecord(doc) : undefined;
   }
 
   async user(id: string): Promise<User | undefined> {
-    const doc = await this.db.collection('users').doc(id).get();
+    const doc = await db.collection('users').doc(id).get();
     return doc.exists ? toUser(doc) : undefined;
   }
 
   async createProduct(product: NewProduct): Promise<ProductRecord> {
     const firestoreData = toFirestoreProduct(product);
     
-    const docRef = await this.db.collection('products').add(firestoreData);
+    const docRef = await db.collection('products').add(firestoreData);
     const doc = await docRef.get();
     
     return toProductRecord(doc);
   }
 
   async createBatch(productId: string, batch: NewBatch): Promise<ProductBatch> {
-    const productRef = this.db.collection('products').doc(productId);
+    const productRef = db.collection('products').doc(productId);
     const firestoreBatch = toFirestoreBatch(batch);
 
     await productRef.update({
-      batches: FirebaseFirestore.FieldValue.arrayUnion(firestoreBatch),
-      totalStock: FirebaseFirestore.FieldValue.increment(batch.quantity)
+      // Replaced FirebaseFirestore.FieldValue with direct FieldValue import
+      batches: FieldValue.arrayUnion(firestoreBatch),
+      totalStock: FieldValue.increment(batch.quantity)
     });
 
     return batch;

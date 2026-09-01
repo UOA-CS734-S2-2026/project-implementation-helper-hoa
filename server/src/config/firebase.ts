@@ -1,21 +1,21 @@
-import 'dotenv/config';
-import { readFileSync } from 'node:fs';
-import { applicationDefault, initializeApp } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getMessaging } from 'firebase-admin/messaging';
+import { getAuth } from 'firebase-admin/auth';
 
 
-const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
 
-if (!keyPath) {
-  console.error('No GOOGLE_APPLICATION_CREDENTIALS set.');
-  console.error('Copy server/.env.example to server/.env and point it at your');
-  console.error('service account key. See the README for how to download one.');
-  process.exit(1);
-}
+// Initialize Firebase safely (prevents double-initialization in SSR frameworks like Next.js)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const app = initializeApp({ credential: applicationDefault() });
-
+// Initialize and export Firebase services
+export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const messaging = getMessaging(app);
-export const projectId: string = JSON.parse(readFileSync(keyPath, 'utf8')).project_id;
+export default app;

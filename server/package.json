@@ -1,0 +1,30 @@
+{
+    "name": "HelperHoa",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "description": "HeloperHoa Demo",
+    "license": "MIT",
+    "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "seed": "tsx src/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+    "dependencies": {
+        "cors": "2.8.6",
+        "dotenv": "17.4.2",
+        "express": "5.2.1",
+        "firebase-admin": "14.2.0"
+  },
+  "devDependencies": {
+    "@types/cors": "2.8.19",
+    "@types/express": "5.0.6",
+    "@types/node": "20.19.43",
+    "tsx": "4.23.6",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+
+}
