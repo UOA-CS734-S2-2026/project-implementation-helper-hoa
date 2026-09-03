@@ -1,4 +1,4 @@
-import { NewProduct, ProductBatch, ProductRecord, User } from "../types";
+import { InvoiceRecord, NewProduct, ProductBatch, ProductRecord, User } from "../types";
 
 
 // ==========================================
@@ -14,6 +14,8 @@ export function toProductBatch(data: any): ProductBatch {
     costPrice: data.costPrice,
     expirationDate: data.expirationDate ? data.expirationDate.toDate() : new Date(), 
     receivedDate: data.receivedDate ? data.receivedDate.toDate() : new Date(),
+    vendorId: data.vendorId,
+    invoiceNumber: data.invoiceNumber,
   };
 }
 
@@ -55,6 +57,33 @@ export function toUser(doc: FirebaseFirestore.DocumentSnapshot): User {
   };
 }
 
+export function toInvoiceRecord(doc: FirebaseFirestore.DocumentSnapshot): InvoiceRecord {
+  const data = doc.data() || {};
+  
+  return {
+    id: doc.id,
+    invoiceNumber: data.invoiceNumber,
+    invoiceDate: data.invoiceDate ? data.invoiceDate.toDate() : null,
+    dueDate: data.dueDate ? data.dueDate.toDate() : null,
+    
+    vendorId: data.vendorId,
+    vendorSnapshot: data.vendorSnapshot || { name: 'Unknown' },
+    billTo: data.billTo || {},
+    lineItems: data.lineItems || [],
+    
+    subtotal: data.subtotal || 0,
+    tax: data.tax || 0,
+    taxRate: data.taxRate || null,
+    discount: data.discount || null,
+    totalAmount: data.totalAmount || 0,
+    
+    paymentTerms: data.paymentTerms || null,
+    paymentMethod: data.paymentMethod || null,
+    purchaseOrder: data.purchaseOrder || null,
+    notes: data.notes || null,
+  };
+}
+
 
 // ==========================================
 // FIRESTORE MAPPERS (WRITE)
@@ -80,5 +109,55 @@ export function toFirestoreBatch(batch: ProductBatch) {
     ...batch,
     expirationDate: FirebaseFirestore.Timestamp.fromDate(batch.expirationDate),
     receivedDate: FirebaseFirestore.Timestamp.fromDate(batch.receivedDate),
+  };
+}
+
+export function toFirestoreInvoice(
+  rawScannerData: any, 
+  resolvedVendorId: string
+) {
+  const parseDateToTimestamp = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return FirebaseFirestore.Timestamp.fromDate(date);
+  };
+
+  return {
+    invoiceNumber: rawScannerData.invoice_number, // required field from schema
+    invoiceDate: parseDateToTimestamp(rawScannerData.invoice_date),
+    dueDate: parseDateToTimestamp(rawScannerData.due_date),
+    
+    vendorId: resolvedVendorId,
+    vendorSnapshot: {
+      name: rawScannerData.vendor.name, // required field from schema
+      email: rawScannerData.vendor.email || null,
+      phone: rawScannerData.vendor.phone || null,
+      address: rawScannerData.vendor.address || null,
+    },
+    
+    billTo: {
+      propertyAddress: rawScannerData.bill_to?.property_address || null,
+      contactName: rawScannerData.bill_to?.contact_name || null,
+    },
+    
+    lineItems: (rawScannerData.line_items || []).map((item: any) => ({
+      productName: item.product_name, // required field
+      description: item.description || '',
+      quantity: item.quantity, // required field
+      unitPrice: item.unit_price, // required field
+      total: item.total || 0,
+      category: item.category || 'Other',
+    })),
+    
+    subtotal: rawScannerData.subtotal || 0,
+    tax: rawScannerData.tax || 0,
+    taxRate: rawScannerData.tax_rate || null,
+    discount: rawScannerData.discount || null,
+    totalAmount: rawScannerData.total_amount, // required field
+    
+    paymentTerms: rawScannerData.payment_terms || null,
+    paymentMethod: rawScannerData.payment_method || null,
+    purchaseOrder: rawScannerData.purchase_order || null,
+    notes: rawScannerData.notes || null,
   };
 }
