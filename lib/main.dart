@@ -9,6 +9,7 @@ import 'features/sell_page.dart';
 import 'features/settings_page.dart';
 import 'features/stock_page.dart';
 import 'theme_controller.dart';
+import 'features/inventory_page.dart';
 
 void main() {
   runApp(const HelperHoaApp());
@@ -48,6 +49,10 @@ class HelperHoaApp extends StatelessWidget {
             GoRoute(
               path: '/settings',
               builder: (context, state) => const SettingsPage(),
+            ),
+            GoRoute(
+              path: '/inventory',
+              builder: (context, state) => const InventoryPage(),
             ),
           ],
         ),
