@@ -21,51 +21,56 @@ class _InventoryPageState extends State<InventoryPage> {
     index: '0',
     category: 'Electronics',
     price: '\$99.99',
-    quantity: 10,
+    quantity: "10 units left",
+    urgencyMessage: "Low Stock",
+    urgencyLevel: 1,
   ),
   Item(
     name: 'Smart Watch',
     index: '1',
     category: 'Electronics',
     price: '\$199.99',
-    quantity: 5,
+    quantity: "5 units left",
+    urgencyMessage: "Low Stock",
+    urgencyLevel: 2,
   ),
   Item(
     name: 'Running Shoes',
     index: '2',
     category: 'Apparel',
     price: '\$79.99',
-    quantity: 20,
+    quantity: "20 pairs left",
+    urgencyMessage: "",
+    urgencyLevel: 0,
   ),
   Item(
     name: 'Cotton T-Shirt',
     index: '3',
     category: 'Apparel',
     price: '\$19.99',
-    quantity: 50,
+    quantity: "50 units left",
+    urgencyMessage: "",
+    urgencyLevel: 0,
   ),
   Item(
     name: 'Stainless Steel Water Bottle',
     index: '4',
     category: 'Home & Kitchen',
     price: '\$29.99',
-    quantity: 15,
+    quantity: "0 units left",
+    urgencyMessage: "Out of Stock",
+    urgencyLevel: 2,
   ),
   Item(
     name: 'Espresso Capsules',
     index: '5',
-    category: 'Food',
+    category: 'Food and Beverages',
     price: '\$249.99',
     expireDate: '2026-11-20',
-    quantity: 3,
+    quantity: "3 boxes left",
+    urgencyMessage: "Expiring Soon",
+    urgencyLevel: 2,
   ),
-  Item (
-    category: 'Food', 
-    name: 'Organic Almonds', 
-    index: '6', 
-    price: '\$15.99', 
-    expireDate: '2026-12-31',
-    quantity: 25,)
     ];
 
   List<Item> _filteredItems = [];
@@ -105,6 +110,12 @@ class _InventoryPageState extends State<InventoryPage> {
           break;
         case 'Expire Date Descending':
           _filteredItems.sort((a, b) => b.expireDate.compareTo(a.expireDate));
+          break;
+        case 'Urgency Ascending':
+          _filteredItems.sort((a, b) => a.urgencyLevel.compareTo(b.urgencyLevel));
+          break;
+        case 'Urgency Descending':
+          _filteredItems.sort((a, b) => b.urgencyLevel.compareTo(a.urgencyLevel));
           break;
       }
     });
@@ -168,7 +179,7 @@ class _InventoryPageState extends State<InventoryPage> {
               children: [
                 DropdownButton<String>(
                   value: selectedCategory,
-                  items: <String>['All', 'Electronics', 'Apparel', 'Home & Kitchen']
+                  items: <String>['All', 'Electronics', 'Apparel', 'Home & Kitchen', "Food & Beverages"]
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -190,7 +201,9 @@ class _InventoryPageState extends State<InventoryPage> {
                                   'Price Ascending', 
                                   'Price Descending', 
                                   'Expire Date Ascending', 
-                                  'Expire Date Descending']
+                                  'Expire Date Descending',
+                                  'Urgency Ascending',
+                                  'Urgency Descending']
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -212,6 +225,11 @@ class _InventoryPageState extends State<InventoryPage> {
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
                 final item = _filteredItems[index];
+                final urgencyColor = switch (item.urgencyLevel) {
+                  1 => const Color(0xFFF59E0B),
+                  2 => const Color(0xFFE74C3C),
+                  _ => Colors.grey,
+                };
                 return Card.outlined(
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
@@ -219,18 +237,65 @@ class _InventoryPageState extends State<InventoryPage> {
                     onTap: () {
                       debugPrint('Card tapped.');
                     },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          title: Text(item.name),
-                          subtitle: Text('Category: ${item.category}'),
-                          trailing: Text(item.price),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    item.name,
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  Text('Category: ${item.category}'),
+                                  Text('Price: ${item.price}'),
+                                  if (item.expireDate.isNotEmpty)
+                                    Text('Expire Date: ${item.expireDate}'),
+                                  Text('Quantity: ${item.quantity}'),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-
-                      
-                    ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                if (item.urgencyMessage.isNotEmpty)
+                                  Text(
+                                    '${item.urgencyMessage}',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+                                    color: urgencyColor)
+                                    ),
+                                  
+                                  Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: urgencyColor.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    item.urgencyLevel > 0 ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+                                    color: urgencyColor,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],)
+                      ]
+                    ) 
                   )
                 );
               },
@@ -248,7 +313,10 @@ class Item {
   final String category;
   final String price;
   final String expireDate;
-  final int quantity;
+  final String quantity;
+  final String urgencyMessage;
+  final int urgencyLevel;
+
 
   Item({
     required this.name,
@@ -257,5 +325,7 @@ class Item {
     required this.price,
     this.expireDate = '',
     required this.quantity,
+    required this.urgencyMessage,
+    required this.urgencyLevel,
   });
 }
