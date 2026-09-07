@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import  adminAuth  from '../config/firebase'; 
-import { DecodedIdToken } from 'firebase-admin/auth';
+import { DecodedIdToken, getAuth } from 'firebase-admin/auth';
 import { HelperHoaStore } from '../store';
+import app from '../config/firebase';
 
-// Extend the Express Request interface to safely type the attached user data
+const adminAuth = getAuth(app);
+
 export interface AuthRequest extends Request {
   user?: DecodedIdToken;
 }
