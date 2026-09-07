@@ -4,8 +4,8 @@ import { getAuth } from 'firebase-admin/auth';
 import path from 'path';
 import fs from 'fs';
 
-// Resolve absolute path from project root
-const serviceAccountPath = path.resolve(process.cwd(), 'service-account.json');
+// Resolve absolute path to project root (not src)
+const serviceAccountPath = path.resolve(process.cwd(), '..','service-account.json');
 
 if (!fs.existsSync(serviceAccountPath)) {
   throw new Error(`Service account key not found at ${serviceAccountPath}. Ensure service-account.json is in your project root folder.`);
