@@ -44,3 +44,7 @@ Conversely we have functions that define how to tack app types and create the co
 
 Lastly we have the function that implements all of the above, namely **FirebaseHoaStore**
 
+
+# To Do
+products: images
+

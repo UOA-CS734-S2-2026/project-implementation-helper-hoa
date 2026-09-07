@@ -65,8 +65,53 @@ export class FirebaseHoaStore implements HelperHoaStore {
   }
 
   async sellProduct(id: string, quantity: number, batchNumber?: string): Promise<ProductRecord | undefined> {
-    // This requires a Firestore transaction to read batches, deduct the right amount, 
-    // and write back safely. Kept as stub based on your interface.
-    throw new Error('Not implemented: requires FIFO batch deduction logic');
+    const productRef = db.collection('products').doc(id);
+
+    // runTransaction ensures no other cashier can modify this product while the math is happening
+    await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(productRef);
+      if (!doc.exists) {
+        throw new Error(`Product with ID ${id} not found`);
+      }
+
+      const product = toProductRecord(doc);
+      
+      if (product.totalStock < quantity) {
+        throw new Error(`Insufficient stock. Only ${product.totalStock} left.`);
+      }
+
+      let remainingToDeduct = quantity;
+      
+      // Sort batches by oldest received date first (FIFO)
+      const sortedBatches = [...product.batches].sort(
+        (a, b) => a.receivedDate.getTime() - b.receivedDate.getTime()
+      );
+
+      for (const batch of sortedBatches) {
+        if (remainingToDeduct === 0) break;
+
+        if (batch.quantity >= remainingToDeduct) {
+          batch.quantity -= remainingToDeduct; 
+          remainingToDeduct = 0; 
+        } else {
+          remainingToDeduct -= batch.quantity; 
+          batch.quantity = 0; 
+        }
+      }
+
+      // Filter out completely depleted batches
+      const activeBatches = sortedBatches.filter(b => b.quantity > 0);
+
+      // Write the calculated arrays and fields back to the document
+      transaction.update(productRef, {
+        // Must map the TS objects back to Firestore-compatible objects
+        batches: activeBatches.map(toFirestoreBatch), 
+        totalStock: FieldValue.increment(-quantity),
+        totalSold: FieldValue.increment(quantity)
+      });
+    });
+
+    // Fetch and return the newly updated state
+    return this.product(id);
   }
 }
