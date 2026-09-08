@@ -10,3 +10,5 @@ node_modules
 !.env.example
 !.env.test
 service-account.json
+package-lock.json
+.dart_tool/package_config.json
