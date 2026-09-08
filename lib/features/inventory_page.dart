@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions.dart';
-
+import 'item_class.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -111,10 +111,7 @@ class _InventoryPageState extends State<InventoryPage> {
         case 'Expire Date Descending':
           _filteredItems.sort((a, b) => b.expireDate.compareTo(a.expireDate));
           break;
-        case 'Urgency Ascending':
-          _filteredItems.sort((a, b) => a.urgencyLevel.compareTo(b.urgencyLevel));
-          break;
-        case 'Urgency Descending':
+        case 'Most Urgent':
           _filteredItems.sort((a, b) => b.urgencyLevel.compareTo(a.urgencyLevel));
           break;
       }
@@ -176,8 +173,10 @@ class _InventoryPageState extends State<InventoryPage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 DropdownButton<String>(
+                  borderRadius: BorderRadius.circular(8),
                   value: selectedCategory,
                   items: <String>['All', 'Electronics', 'Apparel', 'Home & Kitchen', "Food & Beverages"]
                       .map<DropdownMenuItem<String>>((String value) {
@@ -195,6 +194,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
                 const SizedBox(width: 16),
                 DropdownButton<String>(
+                  borderRadius: BorderRadius.circular(8),
                   value: orderBy,
                   items: <String>['Alphabetical Ascending', 
                                   'Alphabetical Descending', 
@@ -202,8 +202,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   'Price Descending', 
                                   'Expire Date Ascending', 
                                   'Expire Date Descending',
-                                  'Urgency Ascending',
-                                  'Urgency Descending']
+                                  'Most Urgent',]
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -224,12 +223,13 @@ class _InventoryPageState extends State<InventoryPage> {
             child: ListView.builder(
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
-                final item = _filteredItems[index];
-                final urgencyColor = switch (item.urgencyLevel) {
+                final Item item = _filteredItems[index];
+                final Color urgencyColor = switch (item.urgencyLevel) {
                   1 => const Color(0xFFF59E0B),
                   2 => const Color(0xFFE74C3C),
                   _ => Colors.grey,
                 };
+              
                 return Card.outlined(
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
@@ -305,27 +305,4 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
     );
   }
-}
-
-class Item {
-  final String name;
-  final String index;
-  final String category;
-  final String price;
-  final String expireDate;
-  final String quantity;
-  final String urgencyMessage;
-  final int urgencyLevel;
-
-
-  Item({
-    required this.name,
-    required this.index, 
-    required this.category,
-    required this.price,
-    this.expireDate = '',
-    required this.quantity,
-    required this.urgencyMessage,
-    required this.urgencyLevel,
-  });
 }
