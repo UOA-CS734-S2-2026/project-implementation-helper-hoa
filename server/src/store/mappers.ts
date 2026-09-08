@@ -38,6 +38,7 @@ export function toProductRecord(doc: DocumentSnapshot): ProductRecord {
     salesVelocity: data.salesVelocity,
     tags: data.tags || [],
     status: data.status,
+    images: data.images || [],
     batches: Array.isArray(data.batches) 
       ? data.batches.map((batch: any) => toProductBatch(batch))
       : []
@@ -99,6 +100,7 @@ export function toFirestoreProduct(product: NewProduct) {
     totalSold: 0,
     salesVelocity: 0,
     batches: [],
+    images: product.images || [],
     // Status must be one of your union string types, not a boolean
     status: product.status || 'out_of_stock' 
   };

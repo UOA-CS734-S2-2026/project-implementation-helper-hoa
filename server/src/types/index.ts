@@ -27,6 +27,7 @@ export type ProductRecord = {
   name: string;
   category: string;
   description: string;
+  images: string[] | null;
   
   costPrice: number;
   sellingPrice: number;
