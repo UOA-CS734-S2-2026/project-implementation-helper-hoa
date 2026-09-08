@@ -36,5 +36,21 @@ export class InventoryService {
       throw new Error('Batch quantity must be greater than zero');
     }
     return this.store.createBatch(productId, batch);
-  }  
+  }
+
+  async sellProduct(id: string, quantity: number, batchNumber?: string): Promise<ProductRecord> {
+    // Business Rule: Prevent zero or negative sale quantities
+    if (quantity <= 0) {
+      throw new Error('Sale quantity must be greater than zero');
+    }
+
+    const updatedProduct = await this.store.sellProduct(id, quantity, batchNumber);
+    
+    // Safety net in case the store layer resolves with undefined
+    if (!updatedProduct) {
+      throw new Error(`Product with ID ${id} not found or failed to process sale`);
+    }
+
+    return updatedProduct;
+  }
 }

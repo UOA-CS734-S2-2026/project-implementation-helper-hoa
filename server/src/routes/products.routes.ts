@@ -66,6 +66,8 @@ export function createProductRoutes(service: InventoryService, store: HelperHoaS
       try {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
         const { quantity, batchNumber } = req.body;
+        const updatedProduct = await service.sellProduct(id, quantity, batchNumber);
+        res.status(200).json(updatedProduct);
       } catch (error) {
         next(error);
       }

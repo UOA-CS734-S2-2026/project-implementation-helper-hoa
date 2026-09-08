@@ -1,5 +1,5 @@
+import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { InvoiceRecord, NewProduct, ProductBatch, ProductRecord, User } from "../types";
-
 
 // ==========================================
 // FIRESTORE MAPPERS (READ)
@@ -19,7 +19,7 @@ export function toProductBatch(data: any): ProductBatch {
   };
 }
 
-export function toProductRecord(doc: FirebaseFirestore.DocumentSnapshot): ProductRecord {
+export function toProductRecord(doc: DocumentSnapshot): ProductRecord {
   const data = doc.data() || {}; // doc.data() contains the fields in Firestore
   
   return {
@@ -44,7 +44,7 @@ export function toProductRecord(doc: FirebaseFirestore.DocumentSnapshot): Produc
   };
 }
 
-export function toUser(doc: FirebaseFirestore.DocumentSnapshot): User {
+export function toUser(doc: DocumentSnapshot): User {
   const data = doc.data() || {};
   
   return {
@@ -57,7 +57,7 @@ export function toUser(doc: FirebaseFirestore.DocumentSnapshot): User {
   };
 }
 
-export function toInvoiceRecord(doc: FirebaseFirestore.DocumentSnapshot): InvoiceRecord {
+export function toInvoiceRecord(doc: DocumentSnapshot): InvoiceRecord {
   const data = doc.data() || {};
   
   return {
@@ -104,12 +104,23 @@ export function toFirestoreProduct(product: NewProduct) {
   };
 }
 
-export function toFirestoreBatch(batch: ProductBatch) {
-  return {
-    ...batch,
-    expirationDate: FirebaseFirestore.Timestamp.fromDate(batch.expirationDate),
-    receivedDate: FirebaseFirestore.Timestamp.fromDate(batch.receivedDate),
-  };
+export function toFirestoreBatch(batch: any) {
+  const formattedBatch = { ...batch };
+
+  // Safely handle receivedDate (default to current time if missing)
+  formattedBatch.receivedDate = batch.receivedDate 
+    ? Timestamp.fromDate(new Date(batch.receivedDate)) 
+    : Timestamp.now();
+
+  // Safely handle optional expirationDate
+  if (batch.expirationDate) {
+    formattedBatch.expirationDate = Timestamp.fromDate(new Date(batch.expirationDate));
+  } else {
+    // Delete it so Firestore doesn't throw an error trying to save an undefined field
+    delete formattedBatch.expirationDate; 
+  }
+
+  return formattedBatch;
 }
 
 export function toFirestoreInvoice(
@@ -119,7 +130,7 @@ export function toFirestoreInvoice(
   const parseDateToTimestamp = (dateString: string | null) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return FirebaseFirestore.Timestamp.fromDate(date);
+    return Timestamp.fromDate(date);
   };
 
   return {

@@ -86,6 +86,13 @@ export class FirebaseHoaStore implements HelperHoaStore {
       const sortedBatches = [...product.batches].sort(
         (a, b) => a.receivedDate.getTime() - b.receivedDate.getTime()
       );
+    if (batchNumber) {
+      const specificBatch = product.batches.find(b => b.batchNumber === batchNumber);
+      if (!specificBatch || specificBatch.quantity < quantity) {
+      throw new Error(`Insufficient stock in batch ${batchNumber}`);
+    }
+    specificBatch.quantity -= quantity;
+    } else {
 
       for (const batch of sortedBatches) {
         if (remainingToDeduct === 0) break;
@@ -98,6 +105,7 @@ export class FirebaseHoaStore implements HelperHoaStore {
           batch.quantity = 0; 
         }
       }
+    }
 
       // Filter out completely depleted batches
       const activeBatches = sortedBatches.filter(b => b.quantity > 0);

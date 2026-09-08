@@ -1,12 +1,18 @@
 import 'dotenv/config';
 import { auth } from '../config/firebase';
 
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_WEB_API_KEY;
+
+if (!apiKey) {
+  console.error('❌ ERROR: API Key is undefined. dotenv is not loading the key from .env');
+  process.exit(1);
+}
+
+console.log(`✅ Loaded API Key starting with: ${apiKey.substring(0, 8)}...`);
+
 async function generateTestToken(uid: string) {
-  // 1. Create a custom token using Admin SDK
   const customToken = await auth.createCustomToken(uid);
-  
-  // 2. Exchange the custom token for a Firebase ID Token via Google Identity Toolkit
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_WEB_API_KEY;
+  // Note: Using FIREBASE_API_KEY which should be in .env
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
     {
