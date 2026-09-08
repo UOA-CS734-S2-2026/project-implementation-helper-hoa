@@ -9,3 +9,7 @@ node_modules
 .env.*
 !.env.example
 !.env.test
+service-account.json
+server/package-lock.json
+.dart_tool/package_config.json
+.vscode/settings.json
