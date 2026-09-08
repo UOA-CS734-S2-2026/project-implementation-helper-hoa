@@ -45,6 +45,17 @@ Conversely we have functions that define how to tack app types and create the co
 Lastly we have the function that implements all of the above, namely **FirebaseHoaStore**
 
 
-# To Do
-products: images
+# Example tests
 
+get your JWT with:
+`npx tsx src/scripts/get-token.ts`
+
+`curl -X GET http://localhost:3000/products \                           
+  -H "Authorization: Bearer $TOKEN"`
+
+```
+curl -X POST http://localhost:3000/products/prod_dell_monitor/sell \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity": 3}'
+  ```
