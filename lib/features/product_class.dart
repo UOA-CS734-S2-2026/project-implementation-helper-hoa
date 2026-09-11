@@ -1,4 +1,4 @@
-class Item {
+class Product {
   final String name;
   final String index;
   final String category;
@@ -8,7 +8,7 @@ class Item {
   final String urgencyMessage;
   final int urgencyLevel;
 
-  Item({
+  Product({
     required this.name,
     required this.index, 
     required this.category,

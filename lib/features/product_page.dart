@@ -1,14 +1,14 @@
-import 'item_class.dart';
+import 'product_class.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../widgets/app_bottom_nav.dart';
 
 
-class ItemPage extends StatelessWidget {
-  final Item item;
+class ProductPage extends StatelessWidget {
+  final Product item;
 
-  const ItemPage({Key? key, required this.item}) : super(key: key);
+  const ProductPage({Key? key, required this.item}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

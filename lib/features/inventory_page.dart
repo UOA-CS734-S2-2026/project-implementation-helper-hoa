@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions.dart';
-import 'item_class.dart';
+import 'product_class.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -16,7 +16,7 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   //TODO:Implement fetching items from server and displaying them in a list view
-  final List<Item> _items = [Item(
+  final List<Product> _items = [Product(
     name: 'Wireless Headphones',
     index: '0',
     category: 'Electronics',
@@ -25,7 +25,7 @@ class _InventoryPageState extends State<InventoryPage> {
     urgencyMessage: "Low Stock",
     urgencyLevel: 1,
   ),
-  Item(
+  Product(
     name: 'Smart Watch',
     index: '1',
     category: 'Electronics',
@@ -34,7 +34,7 @@ class _InventoryPageState extends State<InventoryPage> {
     urgencyMessage: "Low Stock",
     urgencyLevel: 2,
   ),
-  Item(
+  Product(
     name: 'Running Shoes',
     index: '2',
     category: 'Apparel',
@@ -43,7 +43,7 @@ class _InventoryPageState extends State<InventoryPage> {
     urgencyMessage: "",
     urgencyLevel: 0,
   ),
-  Item(
+  Product(
     name: 'Cotton T-Shirt',
     index: '3',
     category: 'Apparel',
@@ -52,7 +52,7 @@ class _InventoryPageState extends State<InventoryPage> {
     urgencyMessage: "",
     urgencyLevel: 0,
   ),
-  Item(
+  Product(
     name: 'Stainless Steel Water Bottle',
     index: '4',
     category: 'Home & Kitchen',
@@ -61,7 +61,7 @@ class _InventoryPageState extends State<InventoryPage> {
     urgencyMessage: "Out of Stock",
     urgencyLevel: 2,
   ),
-  Item(
+  Product(
     name: 'Espresso Capsules',
     index: '5',
     category: 'Food and Beverages',
@@ -73,7 +73,7 @@ class _InventoryPageState extends State<InventoryPage> {
   ),
     ];
 
-  List<Item> _filteredItems = [];
+  List<Product> _filteredItems = [];
   String _searchQuery = '';
   String selectedCategory = 'All';
   String orderBy = 'Alphabetical Ascending';
@@ -223,7 +223,7 @@ class _InventoryPageState extends State<InventoryPage> {
             child: ListView.builder(
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
-                final Item item = _filteredItems[index];
+                final Product item = _filteredItems[index];
                 final Color urgencyColor = switch (item.urgencyLevel) {
                   1 => const Color(0xFFF59E0B),
                   2 => const Color(0xFFE74C3C),
