@@ -1,32 +1,16 @@
-import cors from 'cors';
+import 'dotenv/config';
 import express from 'express';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-type ConfirmedInvoiceItem = {
-  lineNumber: number;
-  name: string;
-  quantity: number;
-  unit: string;
-  costPrice: number;
-  expiryDate: string;
-};
-
-type ConfirmedInvoice = {
-  id: string;
-  supplierName: string;
-  invoiceNumber: string;
-  receivedDate: string;
-  confirmedAt: string;
-  items: ConfirmedInvoiceItem[];
-};
-
-const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-const dataDirectory = path.resolve(currentDirectory, '../data');
-const invoicesFile = path.join(dataDirectory, 'confirmed-invoices.json');
+import cors from 'cors';
+import { createProductRoutes } from './routes/products.routes';
+import { FirebaseHoaStore } from './store/store-firestore';
+import { globalErrorHandler } from './middlewares/errorHandler';
+import { InventoryService } from './services/inventory.service';
 
 const app = express();
+const port = process.env.PORT || 3000;
+
+const store = new FirebaseHoaStore();
+const inventoryService = new InventoryService(store);
 
 app.use(cors());
 app.use(express.json());
