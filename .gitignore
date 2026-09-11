@@ -46,3 +46,4 @@ server/package-lock.json
 .dart_tool/version
 .dart_tool/package_config.json
 server/package-lock.json
+.dart_tool/package_config.json
