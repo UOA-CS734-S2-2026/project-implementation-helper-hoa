@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme_extensions.dart';
+import '../services/invoice_ocr_service.dart';
+import '../models/invoice_review.dart';
+
 
 class StockPage extends StatefulWidget {
   const StockPage({super.key});
@@ -15,32 +18,151 @@ class StockPage extends StatefulWidget {
 
 class _StockPageState extends State<StockPage> {
   final ImagePicker _picker = ImagePicker();
+  final InvoiceOcrService _ocrService = InvoiceOcrService();
+  final TextEditingController _supplierController = TextEditingController();
+  final TextEditingController _invoiceNumberController = TextEditingController();
+  final TextEditingController _receivedDateController = TextEditingController();
+
   String? _selectedFileName;
   String? _capturedImagePath;
+  Map<String, dynamic>? _extractedJson;
+  bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _ocrService.dispose();
+    _supplierController.dispose();
+    _invoiceNumberController.dispose();
+    _receivedDateController.dispose();
+    super.dispose();
+  }
+
+ void _applyExtractedFields(Map<String, dynamic> json) {
+    _supplierController.text = (json['supplierName'] as String?) ?? '';
+    _invoiceNumberController.text = (json['invoiceNumber'] as String?) ?? '';
+    _receivedDateController.text = (json['receivedDate'] as String?) ?? '';
+  }
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-      withData: false,
-    );
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: false,
+      );
 
-    if (result != null && result.files.isNotEmpty) {
+      if (files.isEmpty) {
+        return;
+      }
+
+      final selectedFile = files.single;
+      final pdfPath = selectedFile.path;
+
+      if (pdfPath == null) {
+        if (!mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The selected PDF could not be accessed.'),
+          ),
+        );
+        return;
+      }
+
       setState(() {
-        _selectedFileName = result.files.single.name;
+        _selectedFileName = selectedFile.name;
         _capturedImagePath = null;
+        _isProcessing = true;
+        _extractedJson = null;
       });
+
+      final ocrResult = await _ocrService.processPdf(pdfPath);
+
+      debugPrint('OCR raw text: ${ocrResult.rawText}');
+      debugPrint('Extracted fields: ${ocrResult.json}');
+
+
+
+      if (!mounted) {
+        return;
+      }
+
+      _applyExtractedFields(ocrResult.json);
+
+      setState(() {
+        _extractedJson = ocrResult.json;
+        _isProcessing = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('PDF pick/OCR failed: $error\n$stackTrace');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isProcessing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'We could not read this invoice. Please try another PDF.',
+          ),
+        ),
+      );
     }
   }
 
   Future<void> _takePhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+      );
 
-    if (pickedFile != null) {
+      if (pickedFile == null) {
+        return;
+      }
+
       setState(() {
         _capturedImagePath = pickedFile.path;
         _selectedFileName = null;
+        _isProcessing = true;
+        _extractedJson = null;
       });
+
+      final ocrResult = await _ocrService.processImage(pickedFile.path);
+
+      if (!mounted) {
+        return;
+      }
+
+      _applyExtractedFields(ocrResult.json);
+
+      setState(() {
+        _extractedJson = ocrResult.json;
+        _isProcessing = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Camera/OCR failed: $error\n$stackTrace');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isProcessing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'We could not read the invoice photo. Please try again.',
+          ),
+        ),
+      );
     }
   }
 
@@ -155,96 +277,98 @@ class _StockPageState extends State<StockPage> {
                           width: 1.2,
                         ),
                       ),
-                      child: _capturedImagePath != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.file(
-                                File(_capturedImagePath!),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            )
-                          : _selectedFileName != null
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 70,
-                                        height: 70,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF4E6CD6)
-                                              .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: const Icon(
-                                          Icons.picture_as_pdf_rounded,
-                                          color: Color(0xFF4E6CD6),
-                                          size: 32,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        _selectedFileName!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.primaryText,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      const Text(
-                                        'PDF selected successfully',
-                                        style: TextStyle(
-                                          fontSize: 12.5,
-                                          color: Color(0xFF4E6CD6),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+                      child: _isProcessing
+                          ? const Center(child: CircularProgressIndicator())
+                          : _capturedImagePath != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.file(
+                                    File(_capturedImagePath!),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
                                   ),
                                 )
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 70,
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4E6CD6)
-                                            .withValues(alpha: 0.1),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
+                              : _selectedFileName != null
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 70,
+                                            height: 70,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF4E6CD6)
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: const Icon(
+                                              Icons.picture_as_pdf_rounded,
+                                              color: Color(0xFF4E6CD6),
+                                              size: 32,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            _selectedFileName!,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: context.primaryText,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          const Text(
+                                            'PDF selected successfully',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              color: Color(0xFF4E6CD6),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      child: const Icon(
-                                        Icons.description_outlined,
-                                        color: Color(0xFF4E6CD6),
-                                        size: 32,
-                                      ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 70,
+                                          height: 70,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF4E6CD6)
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: const Icon(
+                                            Icons.description_outlined,
+                                            color: Color(0xFF4E6CD6),
+                                            size: 32,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'No invoice selected yet',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                            color: context.primaryText,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Upload a PDF or take a photo of the invoice',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            color: context.secondaryText,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'No invoice selected yet',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                        color: context.primaryText,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'Upload a PDF or take a photo of the invoice',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: context.secondaryText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                     ),
                   ],
                 ),
@@ -279,16 +403,19 @@ class _StockPageState extends State<StockPage> {
                     _inputField(
                       label: 'Supplier name',
                       hintText: 'Enter supplier name',
+                      controller: _supplierController,
                     ),
                     const SizedBox(height: 12),
                     _inputField(
                       label: 'Invoice number',
                       hintText: 'INV-1048',
+                      controller: _invoiceNumberController,
                     ),
                     const SizedBox(height: 12),
                     _inputField(
                       label: 'Received date',
                       hintText: 'DD/MM/YYYY',
+                      controller: _receivedDateController,
                     ),
                   ],
                 ),
@@ -298,7 +425,51 @@ class _StockPageState extends State<StockPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isProcessing
+                      ? null
+                      : () {
+        final rawItems = _extractedJson?['items'];
+
+        debugPrint('Items supplied to Submit: $rawItems');
+        debugPrint('Items runtime type: ${rawItems.runtimeType}');
+
+        final extractedItems = rawItems is List
+            ? rawItems
+                .whereType<Map>()
+                .map(
+                  (item) => InvoiceItem.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
+            : <InvoiceItem>[];
+
+        debugPrint(
+          'Items converted for review: '
+          '${extractedItems.map((item) => item.toJson()).toList()}',
+        );
+
+        if (extractedItems.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No invoice items were found. Check the invoice and try again.',
+              ),
+            ),
+          );
+          return;
+        }
+
+        context.push(
+          '/stock/review',
+          extra: InvoiceReview(
+            supplierName: _supplierController.text.trim(),
+            invoiceNumber: _invoiceNumberController.text.trim(),
+            receivedDate: _receivedDateController.text.trim(),
+            items: extractedItems,
+          ),
+        );
+      },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4E6CD6),
                     foregroundColor: Colors.white,
@@ -356,6 +527,7 @@ class _StockPageState extends State<StockPage> {
   Widget _inputField({
     required String label,
     required String hintText,
+    required TextEditingController controller,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,6 +542,7 @@ class _StockPageState extends State<StockPage> {
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(color: context.secondaryText),
