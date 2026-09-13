@@ -1,8 +1,6 @@
 import 'product_class.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
-import '../widgets/app_bottom_nav.dart';
 
 
 class ProductPage extends StatelessWidget {
@@ -22,13 +20,12 @@ class ProductPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Category: ${item.category}'),
-            Text('Price: ${item.price}'),
-            if (item.expireDate.isNotEmpty)
-              Text('Expire Date: ${item.expireDate}'),
-            Text('Quantity: ${item.quantity}'),
-            if (item.urgencyMessage.isNotEmpty)
+            Text('Sell Price: ${item.sellingPrice}'),
+            Text('Cost Price: ${item.costPrice}'),
+            Text('Quantity: ${item.totalStock}'),
+            if (item.status.isNotEmpty)
               Text(
-                '${item.urgencyMessage}',
+                '${item.status}',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
           ],
