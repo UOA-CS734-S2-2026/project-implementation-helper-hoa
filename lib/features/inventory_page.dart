@@ -1,8 +1,4 @@
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions.dart';
 import 'product_class.dart';
@@ -16,62 +12,7 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   //TODO:Implement fetching items from server and displaying them in a list view
-  final List<Product> _items = [Product(
-    name: 'Wireless Headphones',
-    index: '0',
-    category: 'Electronics',
-    price: '\$99.99',
-    quantity: "10 units left",
-    urgencyMessage: "Low Stock",
-    urgencyLevel: 1,
-  ),
-  Product(
-    name: 'Smart Watch',
-    index: '1',
-    category: 'Electronics',
-    price: '\$199.99',
-    quantity: "5 units left",
-    urgencyMessage: "Low Stock",
-    urgencyLevel: 2,
-  ),
-  Product(
-    name: 'Running Shoes',
-    index: '2',
-    category: 'Apparel',
-    price: '\$79.99',
-    quantity: "20 pairs left",
-    urgencyMessage: "",
-    urgencyLevel: 0,
-  ),
-  Product(
-    name: 'Cotton T-Shirt',
-    index: '3',
-    category: 'Apparel',
-    price: '\$19.99',
-    quantity: "50 units left",
-    urgencyMessage: "",
-    urgencyLevel: 0,
-  ),
-  Product(
-    name: 'Stainless Steel Water Bottle',
-    index: '4',
-    category: 'Home & Kitchen',
-    price: '\$29.99',
-    quantity: "0 units left",
-    urgencyMessage: "Out of Stock",
-    urgencyLevel: 2,
-  ),
-  Product(
-    name: 'Espresso Capsules',
-    index: '5',
-    category: 'Food and Beverages',
-    price: '\$249.99',
-    expireDate: '2026-11-20',
-    quantity: "3 boxes left",
-    urgencyMessage: "Expiring Soon",
-    urgencyLevel: 2,
-  ),
-    ];
+  final List<Product> _items = Product.getAllProducts();
 
   List<Product> _filteredItems = [];
   String _searchQuery = '';
@@ -100,19 +41,13 @@ class _InventoryPageState extends State<InventoryPage> {
           _filteredItems.sort((a, b) => b.name.compareTo(a.name));
           break;
         case 'Price Ascending':
-          _filteredItems.sort((a, b) => double.parse(a.price.substring(1)).compareTo(double.parse(b.price.substring(1))));
+          _filteredItems.sort((a, b) => double.parse(a.sellingPrice.substring(1)).compareTo(double.parse(b.sellingPrice.substring(1))));
           break;
         case 'Price Descending':
-          _filteredItems.sort((a, b) => double.parse(b.price.substring(1)).compareTo(double.parse(a.price.substring(1))));
-          break;
-        case 'Expire Date Ascending':
-          _filteredItems.sort((a, b) => a.expireDate.compareTo(b.expireDate));
-          break;
-        case 'Expire Date Descending':
-          _filteredItems.sort((a, b) => b.expireDate.compareTo(a.expireDate));
+          _filteredItems.sort((a, b) => double.parse(b.sellingPrice.substring(1)).compareTo(double.parse(a.sellingPrice.substring(1))));
           break;
         case 'Most Urgent':
-          _filteredItems.sort((a, b) => b.urgencyLevel.compareTo(a.urgencyLevel));
+          _filteredItems.sort((a, b) => b.status.compareTo(a.status));
           break;
       }
     });
@@ -200,8 +135,6 @@ class _InventoryPageState extends State<InventoryPage> {
                                   'Alphabetical Descending', 
                                   'Price Ascending', 
                                   'Price Descending', 
-                                  'Expire Date Ascending', 
-                                  'Expire Date Descending',
                                   'Most Urgent',]
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
@@ -224,7 +157,7 @@ class _InventoryPageState extends State<InventoryPage> {
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
                 final Product item = _filteredItems[index];
-                final Color urgencyColor = switch (item.urgencyLevel) {
+                final Color urgencyColor = switch (item.status) {
                   1 => const Color(0xFFF59E0B),
                   2 => const Color(0xFFE74C3C),
                   _ => Colors.grey,
@@ -253,10 +186,8 @@ class _InventoryPageState extends State<InventoryPage> {
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
                                   Text('Category: ${item.category}'),
-                                  Text('Price: ${item.price}'),
-                                  if (item.expireDate.isNotEmpty)
-                                    Text('Expire Date: ${item.expireDate}'),
-                                  Text('Quantity: ${item.quantity}'),
+                                  Text('Price: ${item.sellingPrice}'),
+                                  Text('Quantity: ${item.totalStock}'),
                                 ],
                               ),
                             ),
@@ -270,9 +201,9 @@ class _InventoryPageState extends State<InventoryPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: <Widget>[
-                                if (item.urgencyMessage.isNotEmpty)
+                                if (item.status.isNotEmpty)
                                   Text(
-                                    '${item.urgencyMessage}',
+                                    '${item.status}',
                                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
                                     color: urgencyColor)
                                     ),
@@ -285,7 +216,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    item.urgencyLevel > 0 ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+                                    item.status == 'Low Stock' ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
                                     color: urgencyColor,
                                     size: 20,
                                   ),
