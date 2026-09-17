@@ -13,3 +13,5 @@ service-account.json
 server/package-lock.json
 .dart_tool/package_config.json
 .vscode/settings.json
+server/package-lock.json
+server/.env

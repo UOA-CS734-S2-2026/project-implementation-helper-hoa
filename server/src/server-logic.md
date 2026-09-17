@@ -46,7 +46,10 @@ Lastly we have the function that implements all of the above, namely **FirebaseH
 
 
 # Example tests
-
+run:
+npm run dev
+seed command
+`npx tsx src/scripts/seed.ts`
 get your JWT with:
 `npx tsx src/scripts/get-token.ts`
 
