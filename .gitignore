@@ -47,3 +47,5 @@ server/package-lock.json
 .dart_tool/package_config.json
 server/package-lock.json
 .dart_tool/package_config.json
+python/self_run.txt
+server/data/confirmed-invoices.json
