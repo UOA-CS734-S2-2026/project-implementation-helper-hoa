@@ -11,6 +11,7 @@ import 'features/stock_page.dart';
 import 'theme_controller.dart';
 import 'features/invoice_review_page.dart';
 import 'models/invoice_review.dart';
+import 'features/search_page.dart';
 
 void main() {
   runApp(const HelperHoaApp());
@@ -59,6 +60,10 @@ class HelperHoaApp extends StatelessWidget {
 
                 return InvoiceReviewPage(invoice: invoice);
               },
+            ),
+            GoRoute(
+              path: '/search',
+              builder: (context, state) => const SearchPage(),
             ),
           ],
         ),

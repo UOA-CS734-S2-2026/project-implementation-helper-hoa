@@ -116,70 +116,24 @@ class HomePage extends StatelessWidget {
                             },
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          offset: const Offset(0, 46),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          onSelected: (value) {
-                            if (value == 'Settings') {
-                              context.go('/settings');
-                              return;
-                            }
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(value),
-                                behavior: SnackBarBehavior.floating,
+                        
+                        Tooltip(
+                          message: 'Profile',
+                          child: InkWell(
+                            onTap: () => context.go('/profile'),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFDF58),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                            );
-                          },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(
-                              value: 'Notifications',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.notifications_none_rounded,
-                                      color: Color(0xFF4E6CD6)),
-                                  SizedBox(width: 10),
-                                  Text('Notifications'),
-                                ],
+                              child: const Icon(
+                                Icons.person_outline_rounded,
+                                color: Color(0xFF4E6CD6),
+                                size: 23,
                               ),
-                            ),
-                            PopupMenuItem(
-                              value: 'Messages',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.message_outlined,
-                                      color: Color(0xFF4E6CD6)),
-                                  SizedBox(width: 10),
-                                  Text('Messages'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'Settings',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.settings_outlined,
-                                      color: Color(0xFF4E6CD6)),
-                                  SizedBox(width: 10),
-                                  Text('Settings'),
-                                ],
-                              ),
-                            ),
-                          ],
-                          child: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFDF58),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.notifications_none_rounded,
-                              color: Color(0xFF4E6CD6),
-                              size: 22,
                             ),
                           ),
                         ),

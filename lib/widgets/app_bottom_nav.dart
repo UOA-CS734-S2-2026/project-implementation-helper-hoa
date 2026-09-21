@@ -61,10 +61,10 @@ class AppBottomNav extends StatelessWidget {
             ),
             _navItem(
               index: 4,
-              label: 'Profile',
+              label: 'Search',
               selected: selectedIndex == 4,
-              normalIcon: Icons.person_outline_rounded,
-              selectedIcon: Icons.person_rounded,
+              normalIcon: Icons.search_outlined,
+              selectedIcon: Icons.search_rounded,
               onTap: onItemSelected,
               blue: blue,
             ),

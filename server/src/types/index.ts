@@ -45,6 +45,7 @@ export type ProductRecord = {
   batches: ProductBatch[]; 
 };
 
+
 export type User = {
   id: string;
   name: string;
@@ -102,4 +103,28 @@ export type NewProduct = Omit<ProductRecord, 'id' | 'totalStock' | 'totalSold' |
 export type NewBatch = ProductBatch;
 
 
+export type InventoryAlertSeverity = 'urgent' | 'very_low' | 'low' | 'expiring_soon';
 
+export type InventoryAlertReason = 'out_of_stock' | 'low_stock' | 'expiring_soon';
+
+export type InventoryAlert = {
+  productId: string;
+  productName: string;
+
+  quantityRemaining: number;
+  unitOfMeasure: string;
+  reorderPoint: number;
+
+  nearestExpiryDate: Date | null;
+  daysUntilExpiry: number | null;
+
+  severity: InventoryAlertSeverity;
+  reasons: InventoryAlertReason[];
+};
+
+export type InventoryAlertResponse = Omit<
+  InventoryAlert,
+  'nearestExpiryDate'
+> & {
+  nearestExpiryDate: string | null;
+};

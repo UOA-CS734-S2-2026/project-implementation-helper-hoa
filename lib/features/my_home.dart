@@ -29,7 +29,7 @@ class MyHome extends StatelessWidget {
       case '/ask-hoa':
         selectedIndex = 3;
         break;
-      case '/profile':
+      case '/search':
         selectedIndex = 4;
         break;
       default:
@@ -55,7 +55,7 @@ class MyHome extends StatelessWidget {
               context.go('/ask-hoa');
               break;
             case 4:
-              context.go('/profile');
+              context.go('/search');
               break;
           }
         },
