@@ -14,6 +14,7 @@ const inventoryService = new InventoryService(store);
 
 app.use(cors());
 app.use(express.json());
+app.use('/products', createProductRoutes(inventoryService, store));
 
 async function readInvoices(): Promise<ConfirmedInvoice[]> {
   try {

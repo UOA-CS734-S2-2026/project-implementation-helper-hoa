@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "333387564682",
+    "project_id": "helper-hoa-sc",
+    "storage_bucket": "helper-hoa-sc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333387564682:android:38ce2309264329ca138f73",
+        "android_client_info": {
+          "package_name": "com.example.project_implementation_helper_hoa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvlQZpfJqp0XgqlNe4_V7a0QOLf9scUQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
