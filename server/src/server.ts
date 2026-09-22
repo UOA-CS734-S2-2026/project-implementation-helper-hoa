@@ -1,19 +1,46 @@
 import 'dotenv/config';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
 import { createProductRoutes } from './routes/products.routes';
+import { createAIRoutes } from './routes/ai.routes';
 import { FirebaseHoaStore } from './store/store-firestore';
 import { globalErrorHandler } from './middlewares/errorHandler';
 import { InventoryService } from './services/inventory.service';
+import { AIService } from './services/ai.service';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 
 const store = new FirebaseHoaStore();
 const inventoryService = new InventoryService(store);
+const aiService = new AIService();
 
 app.use(cors());
 app.use(express.json());
+app.use('/products', createProductRoutes(inventoryService, store));
+app.use('/api/ai', createAIRoutes(aiService));
+
+type ConfirmedInvoice = {
+  id: string;
+  supplierName: string;
+  invoiceNumber: string;
+  receivedDate: string;
+  confirmedAt: string;
+  items: {
+    lineNumber?: number;
+    name: string;
+    quantity: number;
+    unit?: string;
+    costPrice: number;
+    expiryDate?: string | null;
+  }[];
+};
+
+const dataDirectory = path.join(process.cwd(), 'data');
+const invoicesFile = path.join(dataDirectory, 'invoices.json');
 
 async function readInvoices(): Promise<ConfirmedInvoice[]> {
   try {
@@ -46,7 +73,7 @@ app.post('/api/invoices', async (request, response) => {
   }
 
   const invoice: ConfirmedInvoice = {
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     supplierName,
     invoiceNumber,
     receivedDate,
@@ -68,6 +95,8 @@ app.post('/api/invoices', async (request, response) => {
   response.status(201).json(invoice);
 });
 
-app.listen(3000, () => {
-  console.log('Helper Hoa API is running at http://localhost:3000');
+app.use(globalErrorHandler);
+
+app.listen(port, () => {
+  console.log(`Helper Hoa API is running at http://localhost:${port}`);
 });

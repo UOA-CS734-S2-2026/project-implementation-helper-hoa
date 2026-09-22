@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/chat_api_service.dart';
 import '../theme_extensions.dart';
 
 class AskHoaPage extends StatefulWidget {
@@ -11,72 +12,83 @@ class AskHoaPage extends StatefulWidget {
 
 class _AskHoaPageState extends State<AskHoaPage> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text':
-          'Hi! I need help checking which products are almost out of stock.',
-      'isUser': true,
-    },
-    {
-      'text':
-          'Sure — I can help. Organic Rice, Fresh Milk, and Tomatoes are currently low on stock.',
-      'isUser': false,
-    },
-    {
-      'text': 'Can you suggest a restock plan for this week?',
-      'isUser': true,
-    },
-    {
-      'text':
-          'Yes. I recommend replenishing Organic Rice and Fresh Milk first, then Tomatoes based on last week’s sales trend.',
-      'isUser': false,
-    },
+  final ChatApiService _chatApiService = ChatApiService();
+  final ScrollController _scrollController = ScrollController();
+
+  final List<({String text, bool isUser})> _messages = [
+    (
+      text:
+          'Hello! I\'m Hoa. Ask me about stock levels, sales trends, restock suggestions, or expiring inventory.',
+      isUser: false,
+    ),
   ];
 
-  void _sendMessage() {
+  bool _isTyping = false;
+
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isTyping) return;
+
+    final history = _messages
+        .map(
+          (m) => {
+            'role': m.isUser ? 'user' : 'assistant',
+            'content': m.text,
+          },
+        )
+        .toList();
 
     setState(() {
-      _messages.add({
-        'text': text,
-        'isUser': true,
-      });
-
-      _messages.add({
-        'text': _generatePlaceholderReply(text),
-        'isUser': false,
-      });
+      _messages.add((text: text, isUser: true));
+      _isTyping = true;
     });
-
     _controller.clear();
+    _scrollToBottom();
+
+    try {
+      final reply = await _chatApiService.sendMessage(
+        message: text,
+        history: history,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _messages.add((text: reply, isUser: false));
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add((
+          text: 'Sorry, I couldn\'t reach the assistant right now. '
+              'Please try again in a moment.',
+          isUser: false,
+        ));
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+        });
+        _scrollToBottom();
+      }
+    }
   }
 
-  String _generatePlaceholderReply(String userText) {
-    final lower = userText.toLowerCase();
-
-    if (lower.contains('stock') || lower.contains('restock')) {
-      return 'I recommend checking Organic Rice, Fresh Milk, and Tomatoes first. They are the most likely to run low this week.';
-    }
-
-    if (lower.contains('sale') || lower.contains('sales')) {
-      return 'Your sales trend looks healthy. I suggest focusing on high-demand items and monitoring expiry dates for perishable stock.';
-    }
-
-    if (lower.contains('expire') || lower.contains('expiry')) {
-      return 'Fresh Milk and Yogurt are the fastest expiring items. Consider discounting or prioritising their sale before the weekend.';
-    }
-
-    if (lower.contains('hello') || lower.contains('hi')) {
-      return 'Hello! I can help with inventory alerts, sales trends, and restocking suggestions.';
-    }
-
-    return 'Thanks for your message. I can help with stock levels, sales trends, restock suggestions, and expiry checks.';
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -130,12 +142,17 @@ class _AskHoaPageState extends State<AskHoaPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.only(top: 8, bottom: 14),
-                  itemCount: _messages.length,
+                  itemCount: _messages.length + (_isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (_isTyping && index == _messages.length) {
+                      return _TypingIndicator(cardBackground: context.cardBackground);
+                    }
+
                     final msg = _messages[index];
-                    final isUser = msg['isUser'] as bool;
-                    final text = msg['text'] as String;
+                    final isUser = msg.isUser;
+                    final text = msg.text;
 
                     return Align(
                       alignment:
@@ -206,7 +223,9 @@ class _AskHoaPageState extends State<AskHoaPage> {
                       ),
                       child: TextField(
                         controller: _controller,
-                        onSubmitted: (_) => _sendMessage(),
+                        onSubmitted: (_) {
+                          if (!_isTyping) _sendMessage();
+                        },
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: 'Type a message...',
@@ -221,12 +240,14 @@ class _AskHoaPageState extends State<AskHoaPage> {
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: _sendMessage,
+                    onTap: _isTyping ? null : _sendMessage,
                     child: Container(
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4E6CD6),
+                        color: _isTyping
+                            ? const Color(0xFF9AA8D8)
+                            : const Color(0xFF4E6CD6),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
@@ -240,6 +261,99 @@ class _AskHoaPageState extends State<AskHoaPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator({required this.cardBackground});
+
+  final Color cardBackground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: cardBackground,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomLeft: Radius.circular(6),
+            bottomRight: Radius.circular(18),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TypingDot(delay: Duration(milliseconds: 0)),
+            SizedBox(width: 5),
+            _TypingDot(delay: Duration(milliseconds: 180)),
+            SizedBox(width: 5),
+            _TypingDot(delay: Duration(milliseconds: 360)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TypingDot extends StatefulWidget {
+  const _TypingDot({required this.delay});
+
+  final Duration delay;
+
+  @override
+  State<_TypingDot> createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.repeat();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.25, end: 1).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Curves.easeInOut,
+        ),
+      ),
+      child: Container(
+        width: 7,
+        height: 7,
+        decoration: const BoxDecoration(
+          color: Color(0xFF4E6CD6),
+          shape: BoxShape.circle,
         ),
       ),
     );
