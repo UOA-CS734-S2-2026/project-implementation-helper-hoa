@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'firebase_options.dart';
 import 'features/ask_hoa_page.dart';
 import 'features/home_page.dart';
 import 'features/my_home.dart';
@@ -13,7 +16,15 @@ import 'features/invoice_review_page.dart';
 import 'models/invoice_review.dart';
 import 'features/search_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: '.env');
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const HelperHoaApp());
 }
 

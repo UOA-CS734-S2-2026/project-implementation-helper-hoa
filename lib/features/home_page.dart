@@ -1,77 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme_extensions.dart';
+import '../models/inventory_alert.dart';
+import '../services/inventory_alert_api_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final lowStockItems = [
-      {
-        'name': 'Organic Rice',
-        'qty': '12 bags left',
-        'expiry': 'Expires in 3 days',
-        'status': 'Very low',
-        'severity': 'urgent',
-        'color': const Color(0xFFE74C3C),
-      },
-      {
-        'name': 'Fresh Milk',
-        'qty': '6 cartons left',
-        'expiry': 'Expires in 1 day',
-        'status': 'Expiring soon',
-        'severity': 'urgent',
-        'color': const Color(0xFFE74C3C),
-      },
-      {
-        'name': 'Tomatoes',
-        'qty': '8 crates left',
-        'expiry': 'Expires in 5 days',
-        'status': 'Low',
-        'severity': 'watch',
-        'color': const Color(0xFFF59E0B),
-      },
-      {
-        'name': 'Chicken Feed',
-        'qty': '15 sacks left',
-        'expiry': 'Expires in 9 days',
-        'status': 'Monitor',
-        'severity': 'watch',
-        'color': const Color(0xFFF59E0B),
-      },
-      {
-        'name': 'Cabbage',
-        'qty': '18 heads left',
-        'expiry': 'Expires in 6 days',
-        'status': 'Low',
-        'severity': 'watch',
-        'color': const Color(0xFFF59E0B),
-      },
-      {
-        'name': 'Yogurt',
-        'qty': '4 tubs left',
-        'expiry': 'Expires in 2 days',
-        'status': 'Urgent',
-        'severity': 'urgent',
-        'color': const Color(0xFFE74C3C),
-      },
-    ];
+  State<HomePage> createState() => _HomePageState();
+}
 
-    final stats = [
-      {
-        'label': 'Total sales',
-        'value': '\$12.4k',
-        'change': '+8.2%',
-        'color': const Color(0xFF50BF9A),
-      },
-      {
-        'label': 'Transactions',
-        'value': '381',
-        'change': '+24',
-        'color': const Color(0xFF4E6CD6),
-      },
-    ];
+class _HomePageState extends State<HomePage> {
+  final InventoryAlertApiService _alertApi = InventoryAlertApiService();
+
+  List<InventoryAlert> _alerts = [];
+  Object? _alertError;
+  bool _isLoadingAlerts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInventoryAlerts();
+  }
+
+  Future<void> _loadInventoryAlerts() async {
+    setState(() {
+      _isLoadingAlerts = true;
+      _alertError = null;
+    });
+
+    try {
+      final alerts = await _alertApi.getAlerts();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _alerts = alerts;
+        _isLoadingAlerts = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _alertError = error;
+        _isLoadingAlerts = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    
 
     return Scaffold(
       body: SafeArea(
@@ -116,7 +100,6 @@ class HomePage extends StatelessWidget {
                             },
                           ),
                         ),
-                        
                         Tooltip(
                           message: 'Profile',
                           child: InkWell(
@@ -139,10 +122,6 @@ class HomePage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
-                    
-                    
-                    
                   ],
                 ),
               ),
@@ -209,114 +188,9 @@ class HomePage extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Overview',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: context.primaryText,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4E6CD6).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'This week',
-                            style: TextStyle(
-                              color: Color(0xFF4E6CD6),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                    
 
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: stats.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.5,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = stats[index];
-                        final color = item['color'] as Color;
-
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: context.cardBackground,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    item['label'] as String,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: context.secondaryText,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: color,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                item['value'] as String,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: context.primaryText,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                item['change'] as String,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                    
 
                     const SizedBox(height: 22),
 
@@ -332,9 +206,9 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: _loadInventoryAlerts,
                           child: const Text(
-                            'View all',
+                            'Refresh',
                             style: TextStyle(
                               color: Color(0xFF4E6CD6),
                               fontWeight: FontWeight.w700,
@@ -347,109 +221,8 @@ class HomePage extends StatelessWidget {
                     const SizedBox(height: 10),
 
                     SizedBox(
-                      height: 270,
-                      child: ListView.separated(
-                        padding: EdgeInsets.zero,
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.vertical,
-                        itemCount: lowStockItems.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final item = lowStockItems[index];
-                          final accent = item['color'] as Color;
-                          final urgent = item['severity'] == 'urgent';
-
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: context.cardBackground,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: accent.withValues(alpha: 0.14),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    urgent ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
-                                    color: accent,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              item['name'] as String,
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                color: context.primaryText,
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: accent.withValues(alpha: 0.14),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              item['status'] as String,
-                                              style: TextStyle(
-                                                color: accent,
-                                                fontSize: 9.5,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        item['qty'] as String,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.primaryText,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        item['expiry'] as String,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: context.secondaryText,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                      height: 380,
+                      child: _buildAlertContent(context),
                     ),
                   ],
                 ),
@@ -457,6 +230,180 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAlertContent(BuildContext context) {
+    if (_isLoadingAlerts) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF4E6CD6),
+        ),
+      );
+    }
+
+    if (_alertError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Could not load inventory alerts.\n$_alertError',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.secondaryText, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _loadInventoryAlerts,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_alerts.isEmpty) {
+      return Center(
+        child: Text(
+          'No inventory alerts.',
+          style: TextStyle(
+            color: context.secondaryText,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadInventoryAlerts,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _alerts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          return _buildAlertCard(context, _alerts[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAlertCard(BuildContext context, InventoryAlert alert) {
+    final isUrgent = alert.severity == 'urgent';
+    final isVeryLow = alert.severity == 'very_low';
+    final accent = isUrgent
+        ? const Color(0xFFE74C3C)
+        : isVeryLow
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF4E6CD6);
+
+    final expiryText = alert.daysUntilExpiry == null
+        ? 'No expiry date'
+        : alert.daysUntilExpiry! < 0
+            ? 'Expired ${alert.daysUntilExpiry!.abs()} days ago'
+            : alert.daysUntilExpiry == 0
+                ? 'Expires today'
+                : alert.daysUntilExpiry == 1
+                    ? 'Expires tomorrow'
+                    : 'Expires in ${alert.daysUntilExpiry} days';
+
+    final status = switch (alert.severity) {
+      'urgent' => 'Urgent',
+      'very_low' => 'Very low',
+      'low' => 'Low',
+      'expiring_soon' => 'Expiring soon',
+      _ => 'Alert',
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isUrgent ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+              color: accent,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        alert.productName,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${alert.quantityRemaining} ${alert.unitOfMeasure} left',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: context.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  expiryText,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: context.secondaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

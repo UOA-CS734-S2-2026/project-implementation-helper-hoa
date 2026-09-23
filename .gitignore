@@ -47,3 +47,7 @@ server/package-lock.json
 .dart_tool/package_config.json
 server/package-lock.json
 .dart_tool/package_config.json
+
+/build/
+.dart_tool/
+server/node_modules/

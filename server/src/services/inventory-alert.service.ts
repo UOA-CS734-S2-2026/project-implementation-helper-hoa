@@ -25,6 +25,10 @@ export class InventoryAlertService {
   }
 
   private createAlert(product: ProductRecord): InventoryAlert | null {
+    if (!product.unitOfMeasure || product.reorderPoint == null) {
+      return null;
+    }
+
     const reasons: InventoryAlertReason[] = [];
 
     if (product.totalStock === 0) {
