@@ -5,3 +5,5 @@ langchain-mcp-adapters
 langchain-openai
 python-dotenv
 requests
+fastapi
+uvicorn
