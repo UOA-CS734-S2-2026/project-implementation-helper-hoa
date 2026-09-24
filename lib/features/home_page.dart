@@ -37,8 +37,15 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
+      final sortedAlerts = [...alerts]
+        ..sort(
+          (a, b) => _severityRank(a.severity).compareTo(
+            _severityRank(b.severity),
+          ),
+        );
+
       setState(() {
-        _alerts = alerts;
+        _alerts = sortedAlerts;
         _isLoadingAlerts = false;
       });
     } catch (error) {
@@ -51,6 +58,16 @@ class _HomePageState extends State<HomePage> {
         _isLoadingAlerts = false;
       });
     }
+  }
+
+  int _severityRank(String severity) {
+    return switch (severity) {
+      'urgent' => 0,
+      'very_low' => 1,
+      'low' => 2,
+      'expiring_soon' => 3,
+      _ => 4,
+    };
   }
 
   @override
