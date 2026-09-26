@@ -5,14 +5,18 @@ import '../models/inventory_alert.dart';
 import '../services/inventory_alert_api_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.alertApi});
+
+  final InventoryAlertApiService? alertApi;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final InventoryAlertApiService _alertApi = InventoryAlertApiService();
+  late final InventoryAlertApiService _alertApi =
+      widget.alertApi ?? InventoryAlertApiService();
+  final Set<String> _expandedAlertIds = {};
 
   List<InventoryAlert> _alerts = [];
   Object? _alertError;
@@ -37,8 +41,7 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      final sortedAlerts = [...alerts]
-        ..sort(
+      final sortedAlerts = [...alerts]..sort(
           (a, b) => _severityRank(a.severity).compareTo(
             _severityRank(b.severity),
           ),
@@ -72,145 +75,78 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    
-
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 18),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                decoration: BoxDecoration(
-                  color: context.cardBackground,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 12,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SizedBox(
-                          width: 154,
-                          height: 56,
-                          child: Image.asset(
-                            'assets/logo.png',
-                            fit: BoxFit.contain,
-                            alignment: Alignment.centerLeft,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Icon(
-                                  Icons.business_center_rounded,
-                                  size: 30,
-                                  color: Color(0xFF4E6CD6),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        Tooltip(
-                          message: 'Profile',
-                          child: InkWell(
-                            onTap: () => context.go('/profile'),
-                            borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFDF58),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.person_outline_rounded,
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              decoration: BoxDecoration(
+                color: context.cardBackground,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SizedBox(
+                        width: 154,
+                        height: 56,
+                        child: Image.asset(
+                          'assets/logo.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerLeft,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.business_center_rounded,
+                                size: 30,
                                 color: Color(0xFF4E6CD6),
-                                size: 23,
                               ),
+                            );
+                          },
+                        ),
+                      ),
+                      Tooltip(
+                        message: 'Profile',
+                        child: InkWell(
+                          onTap: () => context.go('/profile'),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFDF58),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.person_outline_rounded,
+                              color: Color(0xFF4E6CD6),
+                              size: 23,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-
-              Padding(
+            ),
+            Expanded(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF4E6CD6),
-                            Color(0xFF6B7FE4),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Today’s performance',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  'Sales are up 14% compared to yesterday',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.trending_up_rounded,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    
-
-                    
-
-                    const SizedBox(height: 22),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -234,18 +170,15 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 10),
-
-                    SizedBox(
-                      height: 380,
+                    Expanded(
                       child: _buildAlertContent(context),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -310,6 +243,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildAlertCard(BuildContext context, InventoryAlert alert) {
     final isUrgent = alert.severity == 'urgent';
     final isVeryLow = alert.severity == 'very_low';
+    final isExpanded = _expandedAlertIds.contains(alert.productId);
     final accent = isUrgent
         ? const Color(0xFFE74C3C)
         : isVeryLow
@@ -334,90 +268,155 @@ class _HomePageState extends State<HomePage> {
       _ => 'Alert',
     };
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () => setState(() {
+        if (isExpanded) {
+          _expandedAlertIds.remove(alert.productId);
+        } else {
+          _expandedAlertIds.add(alert.productId);
+        }
+      }),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
-            child: Icon(
-              isUrgent ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
-              color: accent,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        alert.productName,
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isUrgent
+                        ? Icons.warning_amber_rounded
+                        : Icons.info_outline_rounded,
+                    color: accent,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              alert.productName,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: context.primaryText,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${alert.quantityRemaining} ${alert.unitOfMeasure} left',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: context.primaryText,
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status,
+                      const SizedBox(height: 2),
+                      Text(
+                        expiryText,
                         style: TextStyle(
-                          color: accent,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 11.5,
+                          color: context.secondaryText,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${alert.quantityRemaining} ${alert.unitOfMeasure} left',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: context.primaryText,
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  expiryText,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: context.secondaryText,
-                  ),
+                const SizedBox(width: 8),
+                Icon(
+                  isExpanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  color: context.secondaryText,
                 ),
               ],
+            ),
+            if (isExpanded) ...[
+              const Divider(height: 24),
+              _alertDetail(
+                  context, 'Vendor', alert.vendorName ?? 'Not available'),
+              _alertDetail(context, 'Total sold',
+                  '${alert.totalSold} ${alert.unitOfMeasure}'),
+              _alertDetail(
+                context,
+                'Expiration date',
+                alert.nearestExpiryDate == null
+                    ? 'Not available'
+                    : MaterialLocalizations.of(context).formatCompactDate(
+                        alert.nearestExpiryDate!,
+                      ),
+              ),
+              _alertDetail(context, 'Reorder point',
+                  '${alert.reorderPoint} ${alert.unitOfMeasure}'),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _alertDetail(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 112,
+            child: Text(label, style: TextStyle(color: context.secondaryText)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: context.primaryText,
+              ),
             ),
           ),
         ],

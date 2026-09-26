@@ -14,9 +14,9 @@ export class InventoryAlertService {
 
   async getAlerts(): Promise<InventoryAlertResponse[]> {
     const products = await this.store.products(true);
+    const alerts = await Promise.all(products.map((product) => this.createAlert(product)));
 
-    return products
-        .map((product) => this.createAlert(product))
+    return alerts
         .filter((alert): alert is InventoryAlert => alert !== null)
         .map((alert) => ({
           ...alert,
@@ -24,7 +24,7 @@ export class InventoryAlertService {
         }));
   }
 
-  private createAlert(product: ProductRecord): InventoryAlert | null {
+  private async createAlert(product: ProductRecord): Promise<InventoryAlert | null> {
     if (!product.unitOfMeasure || product.reorderPoint == null) {
       return null;
     }
@@ -64,10 +64,15 @@ export class InventoryAlertService {
       product.reorderPoint,
       daysUntilExpiry,
     );
+    const vendorId = activeBatches[0]?.vendorId ?? [...product.batches]
+        .sort((first, second) => second.receivedDate.getTime() - first.receivedDate.getTime())[0]?.vendorId;
+    const vendorName = vendorId ? await this.store.vendorName(vendorId) ?? null : null;
 
     return {
       productId: product.id,
       productName: product.name,
+      vendorName,
+      totalSold: product.totalSold ?? 0,
       quantityRemaining: product.totalStock,
       unitOfMeasure: product.unitOfMeasure,
       reorderPoint: product.reorderPoint,

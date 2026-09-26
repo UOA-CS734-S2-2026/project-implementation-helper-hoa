@@ -7,8 +7,49 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:helper_hoa/features/home_page.dart';
+import 'package:helper_hoa/models/inventory_alert.dart';
+import 'package:helper_hoa/services/inventory_alert_api_service.dart';
+
+class FakeAlertApi extends InventoryAlertApiService {
+  @override
+  Future<List<InventoryAlert>> getAlerts() async => [
+        InventoryAlert.fromJson({
+          'productId': 'product-1',
+          'productName': 'Coffee beans',
+          'vendorName': 'Fresh Supply',
+          'totalSold': 24,
+          'quantityRemaining': 3,
+          'unitOfMeasure': 'bags',
+          'reorderPoint': 5,
+          'nearestExpiryDate': '2026-10-01T12:00:00.000Z',
+          'daysUntilExpiry': 5,
+          'severity': 'low',
+          'reasons': ['low_stock'],
+        }),
+      ];
+}
 
 void main() {
+  testWidgets('Alert tap reveals and hides product details', (tester) async {
+    await tester
+        .pumpWidget(MaterialApp(home: HomePage(alertApi: FakeAlertApi())));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fresh Supply'), findsNothing);
+    await tester.tap(find.text('Coffee beans'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fresh Supply'), findsOneWidget);
+    expect(find.text('24 bags'), findsOneWidget);
+    expect(find.text('Expiration date'), findsOneWidget);
+    expect(find.textContaining('2026'), findsOneWidget);
+
+    await tester.tap(find.text('Coffee beans'));
+    await tester.pumpAndSettle();
+    expect(find.text('Fresh Supply'), findsNothing);
+  });
+
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(MaterialApp(
