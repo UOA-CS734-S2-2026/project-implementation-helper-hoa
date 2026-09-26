@@ -9,6 +9,8 @@ import 'features/sell_page.dart';
 import 'features/settings_page.dart';
 import 'features/stock_page.dart';
 import 'theme_controller.dart';
+import 'features/invoice_review_page.dart';
+import 'models/invoice_review.dart';
 import 'features/inventory_page.dart';
 
 void main() {
@@ -34,6 +36,7 @@ class HelperHoaApp extends StatelessWidget {
               path: '/stock',
               builder: (context, state) => const StockPage(),
             ),
+            
             GoRoute(
               path: '/sell',
               builder: (context, state) => const SellPage(),
@@ -51,8 +54,12 @@ class HelperHoaApp extends StatelessWidget {
               builder: (context, state) => const SettingsPage(),
             ),
             GoRoute(
-              path: '/inventory',
-              builder: (context, state) => const InventoryPage(),
+              path: '/stock/review',
+              builder: (context, state) {
+                final invoice = state.extra! as InvoiceReview;
+
+                return InvoiceReviewPage(invoice: invoice);
+              },
             ),
           ],
         ),

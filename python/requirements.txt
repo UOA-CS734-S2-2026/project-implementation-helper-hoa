@@ -1,0 +1,9 @@
+fastmcp==3.4.7
+langchain
+langgraph
+langchain-mcp-adapters
+langchain-openai
+python-dotenv
+requests
+fastapi
+uvicorn
