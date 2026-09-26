@@ -57,6 +57,9 @@ class MyHome extends StatelessWidget {
             case 4:
               context.go('/profile');
               break;
+            case 5:
+              context.go('/inventory');
+              break;
           }
         },
       ),
@@ -317,6 +320,17 @@ class _ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(child: Text('Profile')),
+    );
+  }
+}
+
+class _InventoryPage extends StatelessWidget {
+  const _InventoryPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Inventory')),
     );
   }
 }

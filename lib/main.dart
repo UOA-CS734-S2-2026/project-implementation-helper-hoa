@@ -11,6 +11,7 @@ import 'features/stock_page.dart';
 import 'theme_controller.dart';
 import 'features/invoice_review_page.dart';
 import 'models/invoice_review.dart';
+import 'features/inventory_page.dart';
 
 void main() {
   runApp(const HelperHoaApp());
