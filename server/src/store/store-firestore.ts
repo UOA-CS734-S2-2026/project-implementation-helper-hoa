@@ -42,6 +42,11 @@ export class FirebaseHoaStore implements HelperHoaStore {
     return doc.exists ? toUser(doc) : undefined;
   }
 
+  async vendorName(id: string): Promise<string | undefined> {
+    const doc = await db.collection('vendors').doc(id).get();
+    return doc.data()?.name as string | undefined;
+  }
+
   async createProduct(product: NewProduct): Promise<ProductRecord> {
     const firestoreData = toFirestoreProduct(product);
     

@@ -110,6 +110,8 @@ export type InventoryAlertReason = 'out_of_stock' | 'low_stock' | 'expiring_soon
 export type InventoryAlert = {
   productId: string;
   productName: string;
+  vendorName: string | null;
+  totalSold: number;
 
   quantityRemaining: number;
   unitOfMeasure: string;
