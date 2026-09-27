@@ -6,8 +6,9 @@ import {
     User,
     NewProduct,
     NewBatch,
+    InvoiceRecord,
 } from '../types';
-import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser } from './mappers';
+import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice } from './mappers';
 import { HelperHoaStore } from '.';
 
 // ==========================================
@@ -195,5 +196,27 @@ export class FirebaseHoaStore implements HelperHoaStore {
     // If you prefer a soft delete at the database level instead, 
     // change this to: await db.collection('products').doc(id).update({ status: 'discontinued' });
     await db.collection('products').doc(id).delete();
+  }
+
+  // Fetch all invoices, sorted by date (newest first)
+  async invoices(): Promise<InvoiceRecord[]> {
+    const query = db.collection('invoices').orderBy('date', 'desc');
+    const snapshot = await query.get();
+    
+    return snapshot.docs.map((doc) => toInvoiceRecord(doc));
+  }
+
+  // Map and save a new invoice
+  async createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord> {
+    // 1. Transform the raw payload into a Firestore-compatible object
+    const firestoreInvoice = toFirestoreInvoice(rawScannerData, resolvedVendorId);
+    
+    // 2. Save the mapped document to the 'invoices' collection
+    const docRef = await db.collection('invoices').add(firestoreInvoice);
+    
+    // 3. Fetch the newly created document to return a complete InvoiceRecord
+    const doc = await docRef.get();
+    
+    return toInvoiceRecord(doc);
   }
 }
