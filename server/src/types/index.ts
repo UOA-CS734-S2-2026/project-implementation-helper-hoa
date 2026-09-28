@@ -11,6 +11,8 @@ export type VendorRecord = {
   address: string | null;
 };
 
+export type NewVendor = Omit<VendorRecord, 'id'>;
+
 export type ProductBatch = {
   batchNumber: string;
   quantity: number;
@@ -24,6 +26,7 @@ export type ProductBatch = {
 export type ProductRecord = {
   id: string;
   sku: string;
+  barcode: string | null;
   name: string;
   category: string;
   description: string;
@@ -53,6 +56,30 @@ export type User = {
   role: 'admin' | 'manager' | 'cashier';
   email: string;
   phone: string;
+};
+
+export type NewUser = Omit<User, 'id'> & { password: string };
+
+export type SaleRecord = {
+  id: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  paymentMethod: string;
+  soldBy: string;
+  soldAt: string;
+};
+
+export type NewSale = {
+  productId?: string;
+  sku?: string;
+  quantity: number;
+  unitPrice: number;
+  paymentMethod: string;
+  soldBy: string;
 };
 
 export type InvoiceLineItem = {

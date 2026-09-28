@@ -25,6 +25,7 @@ export function toProductRecord(doc: DocumentSnapshot): ProductRecord {
   return {
     id: doc.id,
     sku: data.sku,
+    barcode: data.barcode ?? null,
     name: data.name,
     category: data.category,
     description: data.description,
@@ -50,11 +51,11 @@ export function toUser(doc: DocumentSnapshot): User {
   
   return {
     id: doc.id,
-    name: data.name,
-    lastName: data.lastName,
-    role: data.role, 
-    email: data.email,
-    phone: data.phone || "",
+    name: data.name ?? '',
+    lastName: data.lastName ?? '',
+    role: data.role ?? 'cashier',
+    email: data.email ?? '',
+    phone: data.phone ?? '',
   };
 }
 
