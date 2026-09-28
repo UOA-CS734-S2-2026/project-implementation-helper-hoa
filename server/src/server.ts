@@ -9,6 +9,8 @@ import { createAIRoutes } from './routes/ai.routes';
 import { FirebaseHoaStore } from './store/store-firestore';
 import { globalErrorHandler } from './middlewares/errorHandler';
 import { InventoryService } from './services/inventory.service';
+import { createInvoiceRoutes } from './routes/invoices.routes';
+import { InvoiceService } from './services/invoice.service';  
 import { AIService } from './services/ai.service';
 
 const app = express();
@@ -16,11 +18,13 @@ const port = Number(process.env.PORT) || 3000;
 
 const store = new FirebaseHoaStore();
 const inventoryService = new InventoryService(store);
+const invoiceService = new InvoiceService(store);
 const aiService = new AIService();
 
 app.use(cors());
 app.use(express.json());
 app.use('/products', createProductRoutes(inventoryService, store));
+app.use('/invoices', createInvoiceRoutes(invoiceService, store));
 app.use('/api/ai', createAIRoutes(aiService));
 
 type ConfirmedInvoice = {
@@ -96,6 +100,7 @@ app.post('/api/invoices', async (request, response) => {
 });
 
 app.use(globalErrorHandler);
+
 
 app.listen(port, () => {
   console.log(`Helper Hoa API is running at http://localhost:${port}`);
