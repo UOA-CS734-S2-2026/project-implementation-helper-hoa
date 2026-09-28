@@ -45,6 +45,9 @@ function validateProduct(value: unknown): NewProduct {
     reorderPoint: Number(body.reorderPoint ?? 0),
     unitOfMeasure: typeof body.unitOfMeasure === 'string' ? body.unitOfMeasure.trim() : 'unit',
     tags: Array.isArray(body.tags) ? body.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    totalStock: Number(body.totalStock ?? 0),
+    totalSold: Number(body.totalSold ?? 0),
+    batches: Array.isArray(body.batches) ? body.batches : [],
     status,
   };
 }
@@ -79,7 +82,7 @@ export function createAdminRoutes(store: HelperHoaStore, inventory: InventorySer
     try {
       const body = record(request.body);
       const changes: Partial<NewProduct> = {};
-      const allowed = ['sku', 'barcode', 'name', 'category', 'description', 'images', 'costPrice', 'sellingPrice', 'taxRate', 'reorderPoint', 'unitOfMeasure', 'tags', 'status'] as const;
+      const allowed = ['sku', 'barcode', 'name', 'category', 'description', 'images', 'costPrice', 'sellingPrice', 'taxRate', 'reorderPoint', 'unitOfMeasure', 'tags', 'status', 'totalStock', 'totalSold', 'batches'] as const;
       for (const key of allowed) if (key in body) (changes as Record<string, unknown>)[key] = body[key];
       response.json(await inventory.updateProduct(request.params.id, changes));
     } catch (error) { next(error); }

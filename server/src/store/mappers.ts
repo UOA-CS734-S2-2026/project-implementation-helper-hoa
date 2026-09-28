@@ -97,10 +97,10 @@ export function toFirestoreProduct(product: NewProduct) {
   return {
     ...product,
     // Ensure initial values are set correctly for the database
-    totalStock: 0,
-    totalSold: 0,
+    totalStock: product.totalStock || 0,
+    totalSold: product.totalSold || 0,
     salesVelocity: 0,
-    batches: [],
+    batches: (product.batches || []).map(toFirestoreBatch),
     images: product.images || [],
     // Status must be one of your union string types, not a boolean
     status: product.status || 'out_of_stock' 

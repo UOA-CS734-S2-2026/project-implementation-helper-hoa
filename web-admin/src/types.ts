@@ -16,7 +16,7 @@ export type Product = {
   salesVelocity: number;
   tags: string[];
   status: 'active' | 'discontinued' | 'out_of_stock';
-  batches: { batchNumber: string; quantity: number; vendorId: string }[];
+  batches: { batchNumber: string; quantity: number; vendorId: string; invoiceNumber: string; expirationDate?: string | null; receivedDate?: string | null }[];
 };
 
 export type StaffUser = {

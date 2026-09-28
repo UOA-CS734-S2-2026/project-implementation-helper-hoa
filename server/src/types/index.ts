@@ -126,7 +126,7 @@ export type InvoiceRecord = {
 
 
 
-export type NewProduct = Omit<ProductRecord, 'id' | 'totalStock' | 'totalSold' | 'salesVelocity' | 'batches'>;
+export type NewProduct = Omit<ProductRecord, 'id' | 'salesVelocity'>;
 export type NewBatch = ProductBatch;
 
 

@@ -140,7 +140,11 @@ export class FirebaseHoaStore implements HelperHoaStore {
       }
       changes.sku = changes.sku.trim().toUpperCase();
     }
-    await ref.update(changes);
+    const firestoreChanges = { ...changes };
+    if (firestoreChanges.batches) {
+      firestoreChanges.batches = firestoreChanges.batches.map(toFirestoreBatch) as ProductBatch[];
+    }
+    await ref.update(firestoreChanges);
     return (await this.product(id))!;
   }
 

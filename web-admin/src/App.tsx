@@ -180,7 +180,7 @@ function App() {
         </div>
       </main>
 
-      {dialog && <EntityDialog key={`${dialog.entity}-${dialog.item?.id ?? 'new'}`} entity={dialog.entity} item={dialog.item} onClose={() => setDialog(null)} onSave={(values) => void saveEntity(dialog.entity, dialog.item, values)} />}
+      {dialog && <EntityDialog key={`${dialog.entity}-${dialog.item?.id ?? 'new'}`} entity={dialog.entity} item={dialog.item} vendors={data.vendors} onClose={() => setDialog(null)} onSave={(values) => void saveEntity(dialog.entity, dialog.item, values)} />}
     </div>
   );
 }
@@ -303,7 +303,7 @@ function SellPage({ products, onComplete }: { products: Product[]; onComplete: (
   </div>;
 }
 
-function EntityDialog({ entity, item, onClose, onSave }: { entity: Entity; item?: Product | StaffUser | Vendor; onClose: () => void; onSave: (values: Record<string, unknown>) => void }) {
+function EntityDialog({ entity, item, vendors, onClose, onSave }: { entity: Entity; item?: Product | StaffUser | Vendor; vendors: Vendor[]; onClose: () => void; onSave: (values: Record<string, unknown>) => void }) {
   const isEdit = Boolean(item);
   const title = `${isEdit ? 'Edit' : 'Add'} ${entity === 'user' ? 'staff user' : entity}`;
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -311,7 +311,20 @@ function EntityDialog({ entity, item, onClose, onSave }: { entity: Entity; item?
     const form = new FormData(event.currentTarget);
     const values = Object.fromEntries(form.entries()) as Record<string, unknown>;
     if (entity === 'product') {
-      for (const key of ['sellingPrice', 'costPrice', 'taxRate', 'reorderPoint']) values[key] = Number(values[key] ?? 0);
+      for (const key of ['sellingPrice', 'costPrice', 'taxRate', 'reorderPoint', 'totalStock', 'totalSold']) values[key] = Number(values[key] ?? 0);
+      values.batches = [{
+        batchNumber: String(values.batchNumber ?? '').trim(),
+        quantity: Number(values.totalStock ?? 0),
+        vendorId: String(values.vendorId ?? '').trim(),
+        invoiceNumber: String(values.invoiceNumber ?? '').trim(),
+        expirationDate: String(values.expirationDate ?? '').trim() || null,
+        receivedDate: String(values.receivedDate ?? '').trim() || null,
+      }];
+      delete values.vendorId;
+      delete values.batchNumber;
+      delete values.invoiceNumber;
+      delete values.expirationDate;
+      delete values.receivedDate;
       values.images = [];
       values.tags = [];
     }
@@ -323,7 +336,9 @@ function EntityDialog({ entity, item, onClose, onSave }: { entity: Entity; item?
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="entity-dialog-title"><div className="dialog-head"><div><p className="eyebrow">CATALOG MANAGEMENT</p><h2 id="entity-dialog-title">{title}</h2></div><button className="icon-button" onClick={onClose} aria-label="Close dialog"><X size={19} /></button></div>
     <form className="entity-form" onSubmit={handleSubmit}>
       {entity === 'product' && <>
-        <div className="form-grid"><Field name="name" label="Product name" defaultValue={product?.name} required /><Field name="sku" label="SKU" defaultValue={product?.sku} required /><Field name="barcode" label="Barcode (optional)" defaultValue={product?.barcode ?? ''} /><Field name="category" label="Category" defaultValue={product?.category} /><Field name="unitOfMeasure" label="Unit" defaultValue={product?.unitOfMeasure || 'unit'} required /><Field name="sellingPrice" label="Selling price (NZD)" type="number" defaultValue={product?.sellingPrice ?? 0} min="0" step="0.01" required /><Field name="costPrice" label="Cost price (NZD)" type="number" defaultValue={product?.costPrice ?? 0} min="0" step="0.01" required /><Field name="taxRate" label="Tax rate (%)" type="number" defaultValue={product?.taxRate ?? 0} min="0" step="0.01" /><Field name="reorderPoint" label="Reorder point" type="number" defaultValue={product?.reorderPoint ?? 0} min="0" step="1" /></div>
+        <div className="form-grid"><Field name="name" label="Product name" defaultValue={product?.name} required /><Field name="sku" label="SKU" defaultValue={product?.sku} required /><Field name="barcode" label="Barcode (optional)" defaultValue={product?.barcode ?? ''} /><Field name="category" label="Category" defaultValue={product?.category} /><Field name="unitOfMeasure" label="Unit" defaultValue={product?.unitOfMeasure || 'unit'} required /><Field name="sellingPrice" label="Selling price (NZD)" type="number" defaultValue={product?.sellingPrice ?? 0} min="0" step="0.01" required /><Field name="costPrice" label="Cost price (NZD)" type="number" defaultValue={product?.costPrice ?? 0} min="0" step="0.01" required /><Field name="taxRate" label="Tax rate (%)" type="number" defaultValue={product?.taxRate ?? 0} min="0" step="0.01" /><Field name="reorderPoint" label="Reorder point" type="number" defaultValue={product?.reorderPoint ?? 0} min="0" step="1" /><Field name="totalStock" label="Total stock" type="number" defaultValue={product?.totalStock ?? 0} min="0" step="1" /><Field name="totalSold" label="Total sold" type="number" defaultValue={product?.totalSold ?? 0} min="0" step="1" />
+          <label className="form-label">Vendor<select name="vendorId" defaultValue={product?.batches[0]?.vendorId ?? ''}><option value="">Select vendor</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}</select></label>
+          <Field name="batchNumber" label="Batch number" defaultValue={product?.batches[0]?.batchNumber ?? ''} /><Field name="invoiceNumber" label="Invoice number" defaultValue={product?.batches[0]?.invoiceNumber ?? ''} /><Field name="expirationDate" label="Expiration date" type="date" defaultValue={product?.batches[0]?.expirationDate?.slice(0, 10) ?? ''} /><Field name="receivedDate" label="Received date" type="date" defaultValue={product?.batches[0]?.receivedDate?.slice(0, 10) ?? ''} /></div>
         <label className="form-label">Description<textarea name="description" defaultValue={product?.description} rows={3} /></label>
         <label className="form-label">Status<select name="status" defaultValue={product?.status ?? 'active'}><option value="active">Active</option><option value="out_of_stock">Out of stock</option><option value="discontinued">Discontinued</option></select></label>
         {isEdit && <div className="form-hint"><AlertTriangle size={15} /> Stock quantity is changed by receiving inventory or recording a sale.</div>}
