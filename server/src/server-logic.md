@@ -46,12 +46,19 @@ Lastly we have the function that implements all of the above, namely **FirebaseH
 
 
 # Example tests
+run:
+npm run dev
+seed command
+`npx tsx src/scripts/seed.ts`
 
 get your JWT with:
 `npx tsx src/scripts/get-token.ts`
 
 `curl -X GET http://localhost:3000/products \                           
   -H "Authorization: Bearer $TOKEN"`
+
+`curl -X GET "http://localhost:3000/products?name=name" \
+-H "Authorization: Bearer $TOKEN"`
 
 ```
 curl -X POST http://localhost:3000/products/prod_dell_monitor/sell \

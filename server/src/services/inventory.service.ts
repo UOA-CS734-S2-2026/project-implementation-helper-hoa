@@ -12,9 +12,10 @@ export class InventoryService {
   // Inject the store so the service can access the database
   constructor(private store: HelperHoaStore) {}
 
-  async getAllProducts(activeOnly?: boolean): Promise<ProductRecord[]> {
-    return this.store.products(activeOnly);
+async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?: string }): Promise<ProductRecord[]> {
+    return this.store.products(filters);
   }
+  
 
   async getProductById(id: string): Promise<ProductRecord> {
     const product = await this.store.product(id);
@@ -133,5 +134,36 @@ export class InventoryService {
     }
 
     return updatedProduct;
+  }
+
+  async updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord> {
+    // Business Rule: Ensure SKU remains uppercase and trimmed if being updated
+    if (updates.sku) {
+      updates.sku = updates.sku.trim().toUpperCase();
+    }
+    
+    // Business Rule: Prevent negative pricing
+    if ((updates.sellingPrice !== undefined && updates.sellingPrice < 0) || 
+        (updates.costPrice !== undefined && updates.costPrice < 0)) {
+      throw new Error('Prices cannot be negative');
+    }
+
+    return this.store.updateProduct(id, updates);
+  }
+
+  async updateBatch(productId: string, batchNumber: string, updates: Partial<NewBatch>) {
+    // Business Rule: Prevent setting batch quantities below zero
+    if (updates.quantity !== undefined && updates.quantity < 0) {
+      throw new Error('Batch quantity cannot be negative');
+    }
+    
+    return this.store.updateBatch(productId, batchNumber, updates);
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    // Soft Delete: Instead of wiping the product and breaking past invoices, 
+    // we change its status to 'discontinued' to hide it from active queries.
+    const updates = { status: 'discontinued' } as Partial<NewProduct>;
+    await this.store.updateProduct(id, updates);
   }
 }
