@@ -12,6 +12,10 @@ export type HelperHoaStore = {
   sellProduct(id: string, quantity: number, batchNumber?: string): Promise<ProductRecord | undefined>;
   createBatch(productId: string, batch: NewBatch): Promise<ProductBatch>;
   createProduct(product: NewProduct): Promise<ProductRecord>;
+
+  // Invoice ingestion
+  productsByName(name: string): Promise<ProductRecord[]>;
+  createInvoice(invoice: ConfirmedInvoice): Promise<string>;
   createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord>;
   
   // Update and Delete operations

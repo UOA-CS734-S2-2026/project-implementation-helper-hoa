@@ -7,3 +7,6 @@ python-dotenv
 requests
 fastapi
 uvicorn
+python-multipart
+beautifulsoup4
+llama-cloud>=2.8

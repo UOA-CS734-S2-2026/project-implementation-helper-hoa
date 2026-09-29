@@ -50,16 +50,10 @@ In Terminal 2:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-python python\chatbot.py
+python python\mcp_chatbot.py
 ```
-
-## Run Tests
-
 In Terminal 3:
-
 ```powershell
 .\.venv\Scripts\Activate.ps1
-python -m test.py
+python python\chatbot_server.py
 ```
-
-Never commit `.env`, API keys, tokens, or `service-account.json`.
