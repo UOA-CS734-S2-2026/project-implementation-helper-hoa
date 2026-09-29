@@ -3,14 +3,16 @@ import 'package:go_router/go_router.dart';
 
 import 'features/ask_hoa_page.dart';
 import 'features/home_page.dart';
+import 'features/invoice_review_page.dart';
+import 'features/invoice_success_page.dart';
 import 'features/my_home.dart';
 import 'features/profile_page.dart';
 import 'features/sell_page.dart';
 import 'features/settings_page.dart';
+import 'features/snap_page.dart';
 import 'features/stock_page.dart';
-import 'theme_controller.dart';
-import 'features/invoice_review_page.dart';
 import 'models/invoice_review.dart';
+import 'theme_controller.dart';
 
 void main() {
   runApp(const HelperHoaApp());
@@ -35,6 +37,10 @@ class HelperHoaApp extends StatelessWidget {
               path: '/stock',
               builder: (context, state) => const StockPage(),
             ),
+            GoRoute(
+              path: '/snap',
+              builder: (context, state) => const SnapPage(),
+            ),
             
             GoRoute(
               path: '/sell',
@@ -53,7 +59,7 @@ class HelperHoaApp extends StatelessWidget {
               builder: (context, state) => const SettingsPage(),
             ),
             GoRoute(
-              path: '/stock/review',
+              path: '/snap/review',
               builder: (context, state) {
                 final invoice = state.extra! as InvoiceReview;
 
@@ -61,6 +67,16 @@ class HelperHoaApp extends StatelessWidget {
               },
             ),
           ],
+        ),
+        GoRoute(
+          path: '/snap/success',
+          builder: (context, state) {
+            final extra = state.extra! as ({int items, int newProducts});
+            return InvoiceSuccessPage(
+              itemsAdded: extra.items,
+              newProducts: extra.newProducts,
+            );
+          },
         ),
       ],
     );

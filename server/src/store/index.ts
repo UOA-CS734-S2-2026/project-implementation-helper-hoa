@@ -1,4 +1,11 @@
-import { NewBatch, NewProduct, ProductBatch, ProductRecord, User } from "../types";
+import {
+  ConfirmedInvoice,
+  NewBatch,
+  NewProduct,
+  ProductBatch,
+  ProductRecord,
+  User,
+} from "../types";
 
 export type HelperHoaStore = {
   // Read operations
@@ -10,4 +17,8 @@ export type HelperHoaStore = {
   sellProduct(id: string, quantity: number, batchNumber?: string): Promise<ProductRecord | undefined>;
   createBatch(productId: string, batch: NewBatch): Promise<ProductBatch>;
   createProduct(product: NewProduct): Promise<ProductRecord>;
+
+  // Invoice ingestion
+  productsByName(name: string): Promise<ProductRecord[]>;
+  createInvoice(invoice: ConfirmedInvoice): Promise<string>;
 };
