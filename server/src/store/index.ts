@@ -17,6 +17,8 @@ export type HelperHoaStore = {
   productsByName(name: string): Promise<ProductRecord[]>;
   createInvoice(invoice: ConfirmedInvoice): Promise<string>;
   createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord>;
+  createUser(user: User): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   
   // Update and Delete operations
   updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord>;

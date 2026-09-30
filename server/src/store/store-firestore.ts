@@ -236,4 +236,17 @@ export class FirebaseHoaStore implements HelperHoaStore {
     
     return toInvoiceRecord(doc);
   }
+
+  // User operations
+  async createUser(user: User): Promise<User> {
+    // We use .set() instead of .add() because we want the Firestore document ID 
+    // to perfectly match the Firebase Auth UID (which is passed in as user.id)
+    await db.collection('users').doc(user.id).set(user);
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.collection('users').doc(id).delete();
+  }
+
 }

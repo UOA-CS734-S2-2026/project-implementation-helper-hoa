@@ -8,6 +8,8 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 import { InventoryService } from './services/inventory.service';
 import { createInvoiceRoutes } from './routes/invoices.routes';
 import { InvoiceService } from './services/invoice.service';  
+import { UserService } from './services/user.service';
+import { createUserRoutes } from './routes/user.routes';
 import { AIService } from './services/ai.service';
 import { ConfirmedInvoice } from './types';
 
@@ -17,12 +19,14 @@ const port = Number(process.env.PORT) || 3000;
 const store = new FirebaseHoaStore();
 const inventoryService = new InventoryService(store);
 const invoiceService = new InvoiceService(store);
+const userService = new UserService(store);
 const aiService = new AIService();
 
 app.use(cors());
 app.use(express.json());
 app.use('/products', createProductRoutes(inventoryService, store));
 app.use('/invoices', createInvoiceRoutes(invoiceService, store));
+app.use('/users', createUserRoutes(userService, store));
 app.use('/api/ai', createAIRoutes(aiService));
 
 app.post('/api/invoices', async (request, response, next) => {
