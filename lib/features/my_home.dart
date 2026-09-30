@@ -16,24 +16,28 @@ class MyHome extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     int selectedIndex = 0;
 
-    switch (location) {
-      case '/':
-        selectedIndex = 0;
-        break;
-      case '/stock':
-        selectedIndex = 1;
-        break;
-      case '/sell':
-        selectedIndex = 2;
-        break;
-      case '/ask-hoa':
-        selectedIndex = 3;
-        break;
-      case '/profile':
-        selectedIndex = 4;
-        break;
-      default:
-        selectedIndex = 0;
+    if (location.startsWith('/snap')) {
+      selectedIndex = 0;
+    } else {
+      switch (location) {
+        case '/':
+          selectedIndex = 1;
+          break;
+        case '/stock':
+          selectedIndex = 2;
+          break;
+        case '/sell':
+          selectedIndex = 3;
+          break;
+        case '/ask-hoa':
+          selectedIndex = 4;
+          break;
+        case '/profile':
+          selectedIndex = 5;
+          break;
+        default:
+          selectedIndex = 1;
+      }
     }
 
     return Scaffold(
@@ -43,19 +47,25 @@ class MyHome extends StatelessWidget {
         onItemSelected: (index) {
           switch (index) {
             case 0:
-              context.go('/');
+              context.go('/snap');
               break;
             case 1:
-              context.go('/stock');
+              context.go('/');
               break;
             case 2:
-              context.go('/sell');
+              context.go('/stock');
               break;
             case 3:
-              context.go('/ask-hoa');
+              context.go('/sell');
               break;
             case 4:
+              context.go('/ask-hoa');
+              break;
+            case 5:
               context.go('/profile');
+              break;
+            case 5:
+              context.go('/inventory');
               break;
           }
         },
@@ -317,6 +327,17 @@ class _ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(child: Text('Profile')),
+    );
+  }
+}
+
+class _InventoryPage extends StatelessWidget {
+  const _InventoryPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Text('Inventory')),
     );
   }
 }

@@ -101,5 +101,33 @@ export type InvoiceRecord = {
 export type NewProduct = Omit<ProductRecord, 'id' | 'totalStock' | 'totalSold' | 'salesVelocity' | 'batches'>;
 export type NewBatch = ProductBatch;
 
+// Payload for confirming an invoice: each line item upserts a product + batch.
+export type ConfirmedInvoiceItem = {
+  lineNumber?: number;
+  name: string;
+  quantity: number;
+  unit?: string;
+  costPrice: number;
+  sellingPrice?: number;
+  expiryDate?: string | null;
+  category?: string;
+  description?: string;
+};
+
+export type ConfirmedInvoice = {
+  id?: string;
+  supplierName: string;
+  invoiceNumber: string;
+  receivedDate: string;
+  confirmedAt?: string;
+  items: ConfirmedInvoiceItem[];
+};
+
+export type ConfirmResultItem = {
+  productId: string;
+  created: boolean;
+  name: string;
+};
+
 
 

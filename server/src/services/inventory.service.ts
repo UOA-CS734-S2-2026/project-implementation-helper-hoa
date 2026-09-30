@@ -1,5 +1,11 @@
 import { HelperHoaStore } from '../store';
-import {ProductRecord, NewProduct, NewBatch } from '../types';
+import {
+  ConfirmResultItem,
+  ConfirmedInvoice,
+  NewBatch,
+  NewProduct,
+  ProductRecord,
+} from '../types';
 
 
 export class InventoryService {
@@ -18,6 +24,81 @@ async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?:
       throw new Error(`Product with ID ${id} not found`); 
     }
     return product;
+  }
+
+  async confirmInvoice(invoice: ConfirmedInvoice): Promise<ConfirmResultItem[]> {
+    const results: ConfirmResultItem[] = [];
+
+    for (const item of invoice.items) {
+      const name = (item.name || '').trim();
+      if (!name) {
+        continue;
+      }
+
+      const matches = await this.store.productsByName(name);
+      let product: ProductRecord | undefined = matches[0];
+
+      if (!product) {
+        product = await this.createNewProduct({
+          name,
+          sku: this.buildSku(name, item.category),
+          category: item.category || 'Materials',
+          description: item.description || '',
+          costPrice: item.costPrice,
+          sellingPrice: typeof item.sellingPrice === 'number' ? item.sellingPrice : 0,
+          taxRate: 15,
+          reorderPoint: 0,
+          unitOfMeasure: item.unit || 'each',
+          tags: [],
+          images: [],
+          status: 'active',
+        });
+      }
+
+      const batch: NewBatch = {
+        batchNumber: this.buildBatchNumber(invoice.invoiceNumber),
+        quantity: item.quantity,
+        costPrice: item.costPrice,
+        receivedDate: new Date(),
+        vendorId: '',
+        invoiceNumber: invoice.invoiceNumber,
+      };
+
+      if (item.expiryDate) {
+        batch.expirationDate = new Date(item.expiryDate);
+      }
+
+      await this.store.createBatch(product.id, batch);
+
+      results.push({ productId: product.id, created: matches.length === 0, name });
+    }
+
+    if (results.length > 0) {
+      await this.store.createInvoice({
+        id: '',
+        supplierName: invoice.supplierName,
+        invoiceNumber: invoice.invoiceNumber,
+        receivedDate: invoice.receivedDate,
+        confirmedAt: new Date().toISOString(),
+        items: invoice.items,
+      });
+    }
+
+    return results;
+  }
+
+  private buildSku(name: string, category?: string): string {
+    const root = category
+      ? `${category}-${name}`
+      : name;
+    const sanitized = root.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return `SKU-${sanitized}-${Math.floor(Math.random() * 9000 + 1000)}`;
+  }
+
+  private buildBatchNumber(invoiceNumber: string): string {
+    const date = new Date();
+    const stamp = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return `BATCH-${invoiceNumber || 'INV'}-${stamp}`;
   }
 
   async createNewProduct(product: NewProduct): Promise<ProductRecord> {

@@ -63,6 +63,23 @@ export class FirebaseHoaStore implements HelperHoaStore {
     return toProductRecord(doc);
   }
 
+  async productsByName(name: string): Promise<ProductRecord[]> {
+    const normalized = name.trim().toLowerCase();
+    if (!normalized) {
+      return [];
+    }
+
+    const snapshot = await db.collection('products').get();
+    return snapshot.docs
+      .map((doc) => toProductRecord(doc))
+      .filter((product) => (product.name || '').trim().toLowerCase() === normalized);
+  }
+
+  async createInvoice(invoice: ConfirmedInvoice): Promise<string> {
+    const docRef = await db.collection('invoices').add(invoice);
+    return docRef.id;
+  }
+
   async createBatch(productId: string, batch: NewBatch): Promise<ProductBatch> {
     const productRef = db.collection('products').doc(productId);
     const firestoreBatch = toFirestoreBatch(batch);
