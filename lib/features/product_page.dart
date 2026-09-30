@@ -1,4 +1,4 @@
-import 'product_class.dart';
+import '../services/product_api_service.dart';
 import 'package:flutter/material.dart';
 
 
