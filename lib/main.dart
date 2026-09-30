@@ -13,6 +13,7 @@ import 'features/snap_page.dart';
 import 'features/stock_page.dart';
 import 'models/invoice_review.dart';
 import 'theme_controller.dart';
+import 'features/inventory_page.dart';
 
 void main() {
   runApp(const HelperHoaApp());
