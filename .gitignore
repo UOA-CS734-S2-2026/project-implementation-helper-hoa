@@ -13,9 +13,12 @@ service-account.json
 server/package-lock.json
 .dart_tool/package_config.json
 .vscode/settings.json
+server/package-lock.json
+server/.env
 .DS_Store
 node_modules/
 npm-debug.log*
+build/
 
 # Environment variables and secrets
 .env
@@ -49,3 +52,5 @@ server/package-lock.json
 .dart_tool/package_config.json
 python/self_run.txt
 server/data/confirmed-invoices.json
+.flutter-plugins-dependencies
+build/e09161ed6a8240f7110db5db6f6e90b3.cache.dill.track.dill

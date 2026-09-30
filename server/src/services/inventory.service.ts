@@ -1,14 +1,21 @@
 import { HelperHoaStore } from '../store';
-import {ProductRecord, NewProduct, NewBatch } from '../types';
+import {
+  ConfirmResultItem,
+  ConfirmedInvoice,
+  NewBatch,
+  NewProduct,
+  ProductRecord,
+} from '../types';
 
 
 export class InventoryService {
   // Inject the store so the service can access the database
   constructor(private store: HelperHoaStore) {}
 
-  async getAllProducts(activeOnly?: boolean): Promise<ProductRecord[]> {
-    return this.store.products(activeOnly);
+async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?: string }): Promise<ProductRecord[]> {
+    return this.store.products(filters);
   }
+  
 
   async getProductById(id: string): Promise<ProductRecord> {
     const product = await this.store.product(id);
@@ -17,6 +24,81 @@ export class InventoryService {
       throw new Error(`Product with ID ${id} not found`); 
     }
     return product;
+  }
+
+  async confirmInvoice(invoice: ConfirmedInvoice): Promise<ConfirmResultItem[]> {
+    const results: ConfirmResultItem[] = [];
+
+    for (const item of invoice.items) {
+      const name = (item.name || '').trim();
+      if (!name) {
+        continue;
+      }
+
+      const matches = await this.store.productsByName(name);
+      let product: ProductRecord | undefined = matches[0];
+
+      if (!product) {
+        product = await this.createNewProduct({
+          name,
+          sku: this.buildSku(name, item.category),
+          category: item.category || 'Materials',
+          description: item.description || '',
+          costPrice: item.costPrice,
+          sellingPrice: typeof item.sellingPrice === 'number' ? item.sellingPrice : 0,
+          taxRate: 15,
+          reorderPoint: 0,
+          unitOfMeasure: item.unit || 'each',
+          tags: [],
+          images: [],
+          status: 'active',
+        });
+      }
+
+      const batch: NewBatch = {
+        batchNumber: this.buildBatchNumber(invoice.invoiceNumber),
+        quantity: item.quantity,
+        costPrice: item.costPrice,
+        receivedDate: new Date(),
+        vendorId: '',
+        invoiceNumber: invoice.invoiceNumber,
+      };
+
+      if (item.expiryDate) {
+        batch.expirationDate = new Date(item.expiryDate);
+      }
+
+      await this.store.createBatch(product.id, batch);
+
+      results.push({ productId: product.id, created: matches.length === 0, name });
+    }
+
+    if (results.length > 0) {
+      await this.store.createInvoice({
+        id: '',
+        supplierName: invoice.supplierName,
+        invoiceNumber: invoice.invoiceNumber,
+        receivedDate: invoice.receivedDate,
+        confirmedAt: new Date().toISOString(),
+        items: invoice.items,
+      });
+    }
+
+    return results;
+  }
+
+  private buildSku(name: string, category?: string): string {
+    const root = category
+      ? `${category}-${name}`
+      : name;
+    const sanitized = root.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return `SKU-${sanitized}-${Math.floor(Math.random() * 9000 + 1000)}`;
+  }
+
+  private buildBatchNumber(invoiceNumber: string): string {
+    const date = new Date();
+    const stamp = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return `BATCH-${invoiceNumber || 'INV'}-${stamp}`;
   }
 
   async createNewProduct(product: NewProduct): Promise<ProductRecord> {
@@ -52,5 +134,36 @@ export class InventoryService {
     }
 
     return updatedProduct;
+  }
+
+  async updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord> {
+    // Business Rule: Ensure SKU remains uppercase and trimmed if being updated
+    if (updates.sku) {
+      updates.sku = updates.sku.trim().toUpperCase();
+    }
+    
+    // Business Rule: Prevent negative pricing
+    if ((updates.sellingPrice !== undefined && updates.sellingPrice < 0) || 
+        (updates.costPrice !== undefined && updates.costPrice < 0)) {
+      throw new Error('Prices cannot be negative');
+    }
+
+    return this.store.updateProduct(id, updates);
+  }
+
+  async updateBatch(productId: string, batchNumber: string, updates: Partial<NewBatch>) {
+    // Business Rule: Prevent setting batch quantities below zero
+    if (updates.quantity !== undefined && updates.quantity < 0) {
+      throw new Error('Batch quantity cannot be negative');
+    }
+    
+    return this.store.updateBatch(productId, batchNumber, updates);
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    // Soft Delete: Instead of wiping the product and breaking past invoices, 
+    // we change its status to 'discontinued' to hide it from active queries.
+    const updates = { status: 'discontinued' } as Partial<NewProduct>;
+    await this.store.updateProduct(id, updates);
   }
 }

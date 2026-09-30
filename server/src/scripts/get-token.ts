@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { auth } from '../config/firebase';
 
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_WEB_API_KEY;
+const apiKey = process.env.FIREBASE_WEB_API_KEY;
 
 if (!apiKey) {
   console.error('❌ ERROR: API Key is undefined. dotenv is not loading the key from .env');

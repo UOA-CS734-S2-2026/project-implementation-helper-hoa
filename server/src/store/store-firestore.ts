@@ -6,8 +6,9 @@ import {
     User,
     NewProduct,
     NewBatch,
+    InvoiceRecord,
 } from '../types';
-import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser } from './mappers';
+import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice } from './mappers';
 import { HelperHoaStore } from '.';
 
 // ==========================================
@@ -17,15 +18,26 @@ import { HelperHoaStore } from '.';
 export class FirebaseHoaStore implements HelperHoaStore {
   
   // Returns products in alphabetical order
-  async products(activeOnly?: boolean): Promise<ProductRecord[]> {
-    // Replaced FirebaseFirestore.Query with direct Query import, and this.db with db
+  async products(filters?: { activeOnly?: boolean; name?: string; category?: string }): Promise<ProductRecord[]> {
     let query: Query = db.collection('products');
 
-    if (activeOnly) {
+    if (filters?.activeOnly) {
       query = query.where('status', '==', 'active');
     }
 
-    // Sorts A-Z alphabetically. Requires a composite index in Firebase if activeOnly is true.
+    if (filters?.category) {
+      query = query.where('category', '==', filters.category);
+    }
+
+    if (filters?.name) {
+      // Note: This enforces an exact, case-sensitive match. 
+      // Firestore does not natively support partial text search (e.g., "LIKE %name%").
+      query = query.where('name', '==', filters.name);
+    }
+
+    // Sorts A-Z alphabetically. 
+    // IMPORTANT: Adding multiple where() clauses combined with orderBy() 
+    // requires you to generate Composite Indexes in your Firebase Console.
     query = query.orderBy('name', 'asc');
 
     const snapshot = await query.get();
@@ -49,6 +61,23 @@ export class FirebaseHoaStore implements HelperHoaStore {
     const doc = await docRef.get();
     
     return toProductRecord(doc);
+  }
+
+  async productsByName(name: string): Promise<ProductRecord[]> {
+    const normalized = name.trim().toLowerCase();
+    if (!normalized) {
+      return [];
+    }
+
+    const snapshot = await db.collection('products').get();
+    return snapshot.docs
+      .map((doc) => toProductRecord(doc))
+      .filter((product) => (product.name || '').trim().toLowerCase() === normalized);
+  }
+
+  async createInvoice(invoice: ConfirmedInvoice): Promise<string> {
+    const docRef = await db.collection('invoices').add(invoice);
+    return docRef.id;
   }
 
   async createBatch(productId: string, batch: NewBatch): Promise<ProductBatch> {
@@ -121,5 +150,90 @@ export class FirebaseHoaStore implements HelperHoaStore {
 
     // Fetch and return the newly updated state
     return this.product(id);
+  }
+
+  async updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord> {
+    const docRef = db.collection('products').doc(id);
+    
+    // Note: Firestore update() ignores fields not present in the updates object
+    await docRef.update(updates);
+    
+    const updatedProduct = await this.product(id);
+    if (!updatedProduct) {
+      throw new Error(`Failed to retrieve updated product with ID ${id}`);
+    }
+    
+    return updatedProduct;
+  }
+
+  async updateBatch(productId: string, batchNumber: string, updates: Partial<NewBatch>): Promise<ProductBatch> {
+    const productRef = db.collection('products').doc(productId);
+    let updatedBatch: ProductBatch | undefined;
+
+    await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(productRef);
+      if (!doc.exists) {
+        throw new Error(`Product with ID ${productId} not found`);
+      }
+
+      const product = toProductRecord(doc);
+      const batchIndex = product.batches.findIndex(b => b.batchNumber === batchNumber);
+
+      if (batchIndex === -1) {
+        throw new Error(`Batch ${batchNumber} not found on product ${productId}`);
+      }
+
+      const oldBatch = product.batches[batchIndex];
+      
+      // Calculate stock difference if the quantity is being modified
+      let stockDifference = 0;
+      if (updates.quantity !== undefined) {
+        stockDifference = updates.quantity - oldBatch.quantity;
+      }
+
+      // Merge the existing batch data with the new updates
+      updatedBatch = { ...oldBatch, ...updates } as ProductBatch;
+      product.batches[batchIndex] = updatedBatch;
+
+      transaction.update(productRef, {
+        batches: product.batches.map(toFirestoreBatch),
+        totalStock: FieldValue.increment(stockDifference)
+      });
+    });
+
+    if (!updatedBatch) {
+      throw new Error('Failed to update batch');
+    }
+
+    return updatedBatch;
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    // This executes a hard delete. 
+    // If you prefer a soft delete at the database level instead, 
+    // change this to: await db.collection('products').doc(id).update({ status: 'discontinued' });
+    await db.collection('products').doc(id).delete();
+  }
+
+  // Fetch all invoices, sorted by date (newest first)
+  async invoices(): Promise<InvoiceRecord[]> {
+    const query = db.collection('invoices').orderBy('date', 'desc');
+    const snapshot = await query.get();
+    
+    return snapshot.docs.map((doc) => toInvoiceRecord(doc));
+  }
+
+  // Map and save a new invoice
+  async createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord> {
+    // 1. Transform the raw payload into a Firestore-compatible object
+    const firestoreInvoice = toFirestoreInvoice(rawScannerData, resolvedVendorId);
+    
+    // 2. Save the mapped document to the 'invoices' collection
+    const docRef = await db.collection('invoices').add(firestoreInvoice);
+    
+    // 3. Fetch the newly created document to return a complete InvoiceRecord
+    const doc = await docRef.get();
+    
+    return toInvoiceRecord(doc);
   }
 }
