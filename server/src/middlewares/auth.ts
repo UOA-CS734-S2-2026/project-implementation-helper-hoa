@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { DecodedIdToken, getAuth } from 'firebase-admin/auth';
 import { HelperHoaStore } from '../store';
 import app from '../config/firebase';
+import { User } from '../types';
 
 const adminAuth = getAuth(app);
 
 export interface AuthRequest extends Request {
-  user?: DecodedIdToken;
+  token?: DecodedIdToken;
+  dbUser?: User;
 }
 
 export const requireAuth = async (
@@ -26,7 +28,7 @@ export const requireAuth = async (
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
     
-    req.user = decodedToken;
+    req.token = decodedToken;
     
     next();
   } catch (error) {
@@ -38,7 +40,7 @@ export const requireAuth = async (
 export const requireRole = (allowedRoles: Array<'admin' | 'manager' | 'cashier'>, store: HelperHoaStore) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const uid = req.user?.uid;
+      const uid = req.token?.uid;
       if (!uid) {
         res.status(401).json({ error: 'Unauthorized: User ID missing' });
         return;
@@ -58,6 +60,7 @@ export const requireRole = (allowedRoles: Array<'admin' | 'manager' | 'cashier'>
         return;
       }
 
+      req.dbUser = user;
       next();
     } catch (error) {
       next(error);
