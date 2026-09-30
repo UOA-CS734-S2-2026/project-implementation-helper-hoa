@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions.dart';
 import '../services/product_api_service.dart';
-import '../config/api_config.dart';
-import 'package:http/http.dart' as http;
+import 'product_page.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -187,7 +186,13 @@ class _InventoryPageState extends State<InventoryPage> {
                         child: InkWell(
                           splashColor: Colors.blue.withAlpha(30),
                           onTap: () {
-                            debugPrint('Card tapped.');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductPage(itemID: item.id),
+                              ),
+                            );
+                          
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

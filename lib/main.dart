@@ -60,6 +60,10 @@ class HelperHoaApp extends StatelessWidget {
               builder: (context, state) => const SettingsPage(),
             ),
             GoRoute(
+              path: '/inventory',
+              builder: (context, state) => const InventoryPage(),
+            ),
+            GoRoute(
               path: '/snap/review',
               builder: (context, state) {
                 final invoice = state.extra! as InvoiceReview;
