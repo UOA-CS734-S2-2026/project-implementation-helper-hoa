@@ -8,6 +8,8 @@ const adminAuth = getAuth(app);
 
 export interface AuthRequest extends Request {
   token?: DecodedIdToken;
+  /** The unverified bearer string, for forwarding the caller's identity downstream. */
+  rawToken?: string;
   dbUser?: User;
 }
 
@@ -27,9 +29,10 @@ export const requireAuth = async (
 
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
-    
+
     req.token = decodedToken;
-    
+    req.rawToken = token;
+
     next();
   } catch (error) {
     console.error('Token verification failed:', error);

@@ -1,43 +1,117 @@
-import 'dotenv/config';
+import '../config/env';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '../config/firebase';
+import { auth, db } from '../config/firebase';
+
+type SeedUser = {
+  legacyUid: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'manager' | 'cashier';
+};
+
+const SEED_USERS: SeedUser[] = [
+  {
+    legacyUid: 'test_admin_uid',
+    email: 'admin@example.com',
+    name: 'Alice Admin',
+    role: 'admin',
+  },
+  {
+    legacyUid: 'test_manager_uid',
+    email: 'manager@example.com',
+    name: 'Bob Manager',
+    role: 'manager',
+  },
+  {
+    legacyUid: 'test_cashier_uid',
+    email: 'cashier@example.com',
+    name: 'Charlie Cashier',
+    role: 'cashier',
+  },
+];
+
+// The password is only ever used for local demo accounts. Override it with
+// SEED_USER_PASSWORD if you need something else.
+const SEED_PASSWORD = process.env.SEED_USER_PASSWORD || 'password123';
+
+function isNotFound(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === 'auth/user-not-found';
+}
+
+/**
+ * Creates the Firebase Auth login record for a seeded user and returns the UID
+ * Firebase actually assigned. Auth owns the UID, so the Firestore profile has to
+ * be written under whatever comes back rather than a hardcoded id.
+ */
+async function upsertAuthUser(user: SeedUser): Promise<string> {
+  try {
+    const existing = await auth.getUserByEmail(user.email);
+    await auth.updateUser(existing.uid, {
+      password: SEED_PASSWORD,
+      displayName: user.name,
+    });
+    console.log(`   └─ Auth user updated: ${user.email} (UID: ${existing.uid})`);
+
+    return existing.uid;
+  } catch (error) {
+    if (!isNotFound(error)) {
+      throw error;
+    }
+  }
+
+  const created = await auth.createUser({
+    email: user.email,
+    password: SEED_PASSWORD,
+    displayName: user.name,
+  });
+  console.log(`   └─ Auth user created: ${user.email} (UID: ${created.uid})`);
+
+  return created.uid;
+}
 
 async function seed() {
   console.log('🌱 Starting Firebase Firestore seed...\n');
 
   try {
-    // 1. Seed Users (Required for testing RBAC middleware)
+    // 1. Seed Users (Required for testing RBAC middleware and for logging in)
+    // Each user needs both a Firebase Auth record, so the app can exchange an
+    // email and password for an ID token, and a Firestore profile holding the
+    // role that requireRole reads.
     console.log('📦 Seeding users...');
-    const users = [
-      {
-        uid: 'test_admin_uid',
-        email: 'admin@example.com',
-        name: 'Alice Admin',
-        role: 'admin',
-      },
-      {
-        uid: 'test_manager_uid',
-        email: 'manager@example.com',
-        name: 'Bob Manager',
-        role: 'manager',
-      },
-      {
-        uid: 'test_cashier_uid',
-        email: 'cashier@example.com',
-        name: 'Charlie Cashier',
-        role: 'cashier',
-      },
-    ];
 
-    for (const user of users) {
-      await db.collection('users').doc(user.uid).set({
+    for (const user of SEED_USERS) {
+      const uid = await upsertAuthUser(user);
+
+      // Earlier runs wrote the profile under a hardcoded uid. Carry the role
+      // over so re-seeding does not reset anyone to cashier, then drop the
+      // stale document.
+      const legacy = await db.collection('users').doc(user.legacyUid).get();
+      const createdAt = legacy.exists
+        ? (legacy.get('createdAt') as Timestamp | undefined) ?? Timestamp.now()
+        : Timestamp.now();
+
+      await db.collection('users').doc(uid).set({
         email: user.email,
         name: user.name,
+        lastName: '',
+        phone: '',
         role: user.role,
-        createdAt: Timestamp.now(),
+        createdAt,
       });
-      console.log(`   └─ User created: ${user.name} [Role: ${user.role}] (ID: ${user.uid})`);
+
+      if (user.legacyUid !== uid) {
+        await db.collection('users').doc(user.legacyUid).delete();
+        console.log(`   └─ Removed legacy profile: ${user.legacyUid}`);
+      }
+
+      console.log(
+        `   └─ User profile saved: ${user.name} [Role: ${user.role}] (ID: ${uid})`,
+      );
     }
+
+    console.log(
+      `\n🔑 Sign in with any of the above emails and the password: ${SEED_PASSWORD}\n`,
+    );
 
     // 2. Seed Vendor
     console.log('\n📦 Seeding vendors...');

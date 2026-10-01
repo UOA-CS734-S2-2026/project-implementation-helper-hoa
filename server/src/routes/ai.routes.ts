@@ -1,10 +1,11 @@
 import { Router, Response, NextFunction } from 'express';
+import { AuthRequest, requireAuth } from '../middlewares/auth';
 import { AIService, ChatRequestPayload } from '../services/ai.service';
 
 export function createAIRoutes(service: AIService): Router {
   const router = Router();
 
-  router.post('/chat', async (req, res: Response, next: NextFunction) => {
+  router.post('/chat', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { message, history } = req.body as Partial<ChatRequestPayload>;
 
@@ -13,10 +14,20 @@ export function createAIRoutes(service: AIService): Router {
         return;
       }
 
-      const { reply } = await service.chat({
-        message: message.trim(),
-        history: Array.isArray(history) ? history : [],
-      });
+      if (!req.rawToken) {
+        res.status(401).json({ error: 'Unauthorized: Missing token' });
+        return;
+      }
+
+      // The chatbot's MCP tools call back into this API, so the caller's token
+      // travels with the request instead of the Python tier inventing its own.
+      const { reply } = await service.chat(
+        {
+          message: message.trim(),
+          history: Array.isArray(history) ? history : [],
+        },
+        req.rawToken,
+      );
 
       res.status(200).json({ reply });
     } catch (error) {

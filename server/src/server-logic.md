@@ -48,13 +48,21 @@ Lastly we have the function that implements all of the above, namely **FirebaseH
 # Example tests
 run:
 npm run dev
-seed command
+
+seed the login accounts and demo data:
 `npx tsx src/scripts/seed.ts`
 
-get your JWT with:
+sign in the way the app does, and keep the returned `idToken`:
+```
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password123"}'
+```
+
+`TOKEN=$(...)` from the login response, or mint one by hand with:
 `npx tsx src/scripts/get-token.ts`
 
-`curl -X GET http://localhost:3000/products \                           
+`curl -X GET http://localhost:3000/products \
   -H "Authorization: Bearer $TOKEN"`
 
 `curl -X GET "http://localhost:3000/products?name=name" \
@@ -65,4 +73,4 @@ curl -X POST http://localhost:3000/products/prod_dell_monitor/sell \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"quantity": 3}'
-  ```
+```

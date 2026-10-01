@@ -15,7 +15,7 @@ from pathlib import Path
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -66,7 +66,15 @@ class ChatResponse(BaseModel):
     reply: str
 
 
-def _mcp_client() -> MultiServerMCPClient:
+def _mcp_client(user_token: str) -> MultiServerMCPClient:
+    """Build a client whose MCP subprocess acts as the logged-in user.
+
+    A fresh client (and therefore a fresh subprocess) is created per /chat call,
+    so the token below belongs to exactly one request and cannot leak to the
+    next caller. The env dict is handed to the child process as-is, and
+    python-dotenv never overrides a variable that is already set, so TOKEN here
+    wins over anything left in the project-root .env.
+    """
     return MultiServerMCPClient(
         {
             "helperhoa": {
@@ -78,19 +86,45 @@ def _mcp_client() -> MultiServerMCPClient:
                     "FASTMCP_LOG_ENABLED": "false",
                     "MCP_API_BASE_URL": os.getenv("MCP_API_BASE_URL", "http://localhost:3000"),
                     "MCP_SECRET": os.getenv("MCP_SECRET", ""),
+                    "TOKEN": user_token,
                 },
             }
         }
     )
 
 
+def _bearer_token(authorization: str | None) -> str:
+    """Pull the Firebase ID token out of the Authorization header.
+
+    Express verifies this token with requireAuth and forwards it verbatim, so
+    rejecting it here keeps a direct caller from reaching the MCP tools.
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing Authorization header. Log in through the app first.",
+        )
+
+    scheme, _, token = authorization.partition(" ")
+
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header must be 'Bearer <token>'.",
+        )
+
+    return token.strip()
+
+
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(request: ChatRequest, authorization: str | None = Header(default=None)) -> ChatResponse:
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
 
+    user_token = _bearer_token(authorization)
+
     try:
-        client = _mcp_client()
+        client = _mcp_client(user_token)
         tools = await client.get_tools()
     except Exception as exc:
         raise HTTPException(
