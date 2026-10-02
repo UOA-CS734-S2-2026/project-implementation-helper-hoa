@@ -61,7 +61,7 @@ class HelperHoaApp extends StatelessWidget {
             ),
             GoRoute(
               path: '/inventory',
-              builder: (context, state) => const InventoryPage(),
+              builder: (context, state) => const InventoryPage(search: ""),
             ),
             GoRoute(
               path: '/snap/review',

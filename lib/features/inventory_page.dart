@@ -5,7 +5,8 @@ import '../services/product_api_service.dart';
 import 'product_page.dart';
 
 class InventoryPage extends StatefulWidget {
-  const InventoryPage({super.key});
+  final String search;
+  const InventoryPage({super.key, required this.search});
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -16,7 +17,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   List<Product> _items = [];
   List<Product> _filteredItems = [];
-  String _searchQuery = '';
+  String _searchQuery = "";
   String selectedCategory = 'All';
   String orderBy = 'Alphabetical Ascending';
 
@@ -28,6 +29,7 @@ class _InventoryPageState extends State<InventoryPage> {
       setState(() {
         _items = value;
         _filteredItems = _items;
+        _searchQuery = widget.search;
       });
     });
   }
@@ -257,7 +259,6 @@ class _InventoryPageState extends State<InventoryPage> {
                   );
                 }
               },
-              
             ),
           ),
         ],

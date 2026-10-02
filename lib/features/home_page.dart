@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme_extensions.dart';
+import 'inventory_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -199,6 +200,14 @@ class HomePage extends StatelessWidget {
                         ],
                       ),
                       child: TextField(
+                        onSubmitted: (value) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => InventoryPage(search: value),
+                              ),
+                          );
+                        },
                         decoration: InputDecoration(
                           hintText: 'Search products, orders...',
                           hintStyle: TextStyle(color: Colors.grey.shade500),
