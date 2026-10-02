@@ -2,31 +2,44 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-// The Python tier loads the project-root .env (python/chatbot_server.py), so the
-// Node tier resolves the same file. `import 'dotenv/config'` cannot be used here:
-// it looks for <cwd>/.env, and every npm script runs from server/, which would
-// mean server/.env -- a file that does not exist and never has.
+// The server tier reads configuration from two files, in this order:
 //
-// This file lives at server/src/config/env.ts, so the project root is three
-// levels up. dotenv never overwrites a variable that is already in the
-// environment, so a real exported environment variable still wins over .env.
+//   1. <server>/.env        -- everything the Express server owns
+//   2. <project root>/.env  -- variables shared with the Python tier (MCP_SECRET)
+//
+// The order is load order, and it is what decides precedence: dotenv never
+// overwrites a variable that is already set, so the FIRST file to define a
+// variable wins. server/.env is therefore loaded first, giving the precedence
+// real environment > server/.env > project-root .env. A variable that is
+// genuinely shared is defined exactly once, in the root file, and server/.env
+// simply does not mention it.
+//
+// Both paths are resolved relative to this module (server/src/config/env.ts),
+// never to process.cwd(): every npm script runs from server/, but running a
+// script from the project root must not change which files are read. That is
+// also why `import 'dotenv/config'` is not used -- it would look for
+// <cwd>/.env, which is neither of the two files above.
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const rootEnvPath = path.resolve(moduleDir, '..', '..', '..', '.env');
+const serverDir = path.resolve(moduleDir, '..', '..');
+const rootEnvPath = path.resolve(serverDir, '..', '.env');
+const serverEnvPath = path.resolve(serverDir, '.env');
 
+dotenv.config({ path: serverEnvPath });
 dotenv.config({ path: rootEnvPath });
 
-export const envPath = rootEnvPath;
+export const envPath = serverEnvPath;
+export const sharedEnvPath = rootEnvPath;
 
 /**
- * Reads a required variable, failing with the path we looked in.
+ * Reads a required variable, failing with the paths we looked in.
  */
 export function requireEnv(name: string): string {
   const value = process.env[name];
 
   if (!value) {
     throw new Error(
-      `${name} is not set. Add it to ${rootEnvPath} (the project-root .env) ` +
-        'or export it in the environment.',
+      `${name} is not set. Add it to ${serverEnvPath} (or ${rootEnvPath} for ` +
+        'variables shared with the Python tier), or export it in the environment.',
     );
   }
 

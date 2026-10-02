@@ -187,7 +187,7 @@ async function seed() {
     console.log('\n🚀 Success! Database connection verified and initial test data seeded successfully.');
     process.exit(0);
   } catch (error) {
-    console.error('\n❌ Seeding failed! Check your service-account.json and .env file:', error);
+    console.error('\n❌ Seeding failed! Check server/service-account.json and server/.env:', error);
     process.exit(1);
   }
 }
