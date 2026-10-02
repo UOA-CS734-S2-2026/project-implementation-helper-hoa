@@ -4,28 +4,26 @@
 .DS_Store
 node_modules
 
-# Environment variables - Edit if necessary
-.env
-.env.*
-!.env.example
-!.env.test
-service-account.json
-server/package-lock.json
-.dart_tool/package_config.json
-.vscode/settings.json
-server/package-lock.json
-server/.env
 .DS_Store
 node_modules/
 npm-debug.log*
 build/
 
 # Environment variables and secrets
+#
+# The patterns below are unanchored, so they cover both the project-root .env
+# and the per-tier server/.env at any depth. The .example files are the
+# committed templates and must stay tracked.
 .env
 .env.*
 !.env.example
 !.env.test
 service-account.json
+server/.env
+server/service-account.json
+server/package-lock.json
+.dart_tool/package_config.json
+.vscode/settings.json
 
 # Python
 .venv/

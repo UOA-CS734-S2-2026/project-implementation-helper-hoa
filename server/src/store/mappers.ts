@@ -1,5 +1,5 @@
 import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
-import { InvoiceRecord, NewProduct, ProductBatch, ProductRecord, User } from "../types";
+import { ConfirmedInvoice, InvoiceLineItem, InvoiceRecord, NewProduct, ProductBatch, ProductRecord, User } from "../types";
 
 // ==========================================
 // FIRESTORE MAPPERS (READ)
@@ -172,5 +172,77 @@ export function toFirestoreInvoice(
     paymentMethod: rawScannerData.payment_method || null,
     purchaseOrder: rawScannerData.purchase_order || null,
     notes: rawScannerData.notes || null,
+  };
+}
+
+/**
+ * Converts an invoice the user confirmed in the app into the same Firestore
+ * layout that toFirestoreInvoice produces for scanned invoices. Keeping one
+ * shape means toInvoiceRecord and the invoices() query can read both kinds back
+ * without special-casing.
+ *
+ * The confirmed payload arrives in camelCase with supplierName/items rather
+ * than the scanner's snake_case vendor/line_items, which is why it needs its
+ * own mapper instead of reusing toFirestoreInvoice.
+ */
+export function toFirestoreConfirmedInvoice(invoice: ConfirmedInvoice) {
+  const lineItems: InvoiceLineItem[] = invoice.items.map((item) => {
+    const unitPrice = typeof item.costPrice === 'number' ? item.costPrice : 0;
+    const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+
+    return {
+      productName: item.name,
+      description: item.description || '',
+      quantity,
+      unitPrice,
+      total: unitPrice * quantity,
+      // toFirestoreInvoice falls back to 'Other' the same way. The wider union
+      // type on InvoiceLineItem means an unchecked cast would let an arbitrary
+      // string through into Firestore.
+      category: (item.category || 'Other') as InvoiceLineItem['category'],
+    };
+  });
+
+  const subtotal = lineItems.reduce((sum, line) => sum + line.total, 0);
+  const parseDate = (value?: string | null): Timestamp | null => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : Timestamp.fromDate(parsed);
+  };
+
+  return {
+    invoiceNumber: invoice.invoiceNumber,
+    // Scanned invoices store their date as invoiceDate, and invoices() sorts on
+    // it, so the received date is what the confirmed invoice carries over.
+    invoiceDate: parseDate(invoice.receivedDate),
+    dueDate: null,
+
+    vendorId: '',
+    vendorSnapshot: {
+      name: invoice.supplierName,
+      email: null,
+      phone: null,
+      address: null,
+    },
+
+    billTo: {
+      propertyAddress: null,
+      contactName: null,
+    },
+
+    lineItems,
+
+    subtotal,
+    tax: 0,
+    taxRate: null,
+    discount: null,
+    totalAmount: subtotal,
+
+    paymentTerms: null,
+    paymentMethod: null,
+    purchaseOrder: null,
+    // confirmedAt is kept so it is not lost when the rest is normalised into
+    // the scanner layout.
+    notes: `Confirmed at ${invoice.confirmedAt ?? new Date().toISOString()}`,
   };
 }

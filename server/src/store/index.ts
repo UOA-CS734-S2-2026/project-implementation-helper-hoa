@@ -1,4 +1,4 @@
-import { InvoiceRecord, NewBatch, NewProduct, ProductBatch, ProductRecord, User } from "../types";
+import { ConfirmedInvoice, InvoiceRecord, NewBatch, NewProduct, ProductBatch, ProductRecord, User } from "../types";
 
 export type HelperHoaStore = {
   // Read operations
@@ -13,10 +13,11 @@ export type HelperHoaStore = {
   createBatch(productId: string, batch: NewBatch): Promise<ProductBatch>;
   createProduct(product: NewProduct): Promise<ProductRecord>;
 
-  // Invoice ingestion
+  // Invoice ingestion. Scanned and app-confirmed invoices are both stored in
+  // the same `invoices` collection, so they use distinct method names.
   productsByName(name: string): Promise<ProductRecord[]>;
-  createInvoice(invoice: ConfirmedInvoice): Promise<string>;
-  createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord>;
+  createConfirmedInvoice(invoice: ConfirmedInvoice): Promise<string>;
+  createInvoiceFromScanner(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord>;
   createUser(user: User): Promise<User>;
   deleteUser(id: string): Promise<void>;
   

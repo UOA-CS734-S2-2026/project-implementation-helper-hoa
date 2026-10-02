@@ -1,14 +1,21 @@
-import 'dotenv/config';
+import '../config/env';
+import { requireEnv } from '../config/env';
 import { auth } from '../config/firebase';
 
-const apiKey = process.env.FIREBASE_WEB_API_KEY;
-
-if (!apiKey) {
-  console.error('❌ ERROR: API Key is undefined. dotenv is not loading the key from .env');
-  process.exit(1);
-}
+const apiKey = requireEnv('FIREBASE_WEB_API_KEY');
+const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
 
 console.log(`✅ Loaded API Key starting with: ${apiKey.substring(0, 8)}...`);
+
+/**
+ * Firebase Auth owns the uid, and seed.ts creates the login record before the
+ * Firestore profile, so the admin's uid is whatever Auth returned. Look it up by
+ * email rather than assuming the old hardcoded 'test_admin_uid'.
+ */
+async function resolveUid(email: string): Promise<string> {
+  const user = await auth.getUserByEmail(email);
+  return user.uid;
+}
 
 async function generateTestToken(uid: string) {
   const customToken = await auth.createCustomToken(uid);
@@ -30,5 +37,15 @@ async function generateTestToken(uid: string) {
   }
 }
 
-// Generate token for seeded admin user
-generateTestToken('test_admin_uid');
+async function main() {
+  const uid = await resolveUid(adminEmail);
+  await generateTestToken(uid);
+}
+
+main().catch((error) => {
+  console.error(
+    `Failed to mint a token for ${adminEmail}. Run \`npm run seed\` first so the Auth user exists.`,
+    error,
+  );
+  process.exit(1);
+});

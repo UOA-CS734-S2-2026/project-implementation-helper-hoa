@@ -7,8 +7,9 @@ import {
     NewProduct,
     NewBatch,
     InvoiceRecord,
+    ConfirmedInvoice,
 } from '../types';
-import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice } from './mappers';
+import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice, toFirestoreConfirmedInvoice } from './mappers';
 import { HelperHoaStore } from '.';
 
 // ==========================================
@@ -75,8 +76,14 @@ export class FirebaseHoaStore implements HelperHoaStore {
       .filter((product) => (product.name || '').trim().toLowerCase() === normalized);
   }
 
-  async createInvoice(invoice: ConfirmedInvoice): Promise<string> {
-    const docRef = await db.collection('invoices').add(invoice);
+  // Persists an invoice the user confirmed in the app (POST /api/invoices).
+  // Mapped to the same layout as scanned invoices so GET /invoices can read
+  // both kinds back through toInvoiceRecord.
+  async createConfirmedInvoice(invoice: ConfirmedInvoice): Promise<string> {
+    const firestoreData = toFirestoreConfirmedInvoice(invoice);
+
+    const docRef = await db.collection('invoices').add(firestoreData);
+
     return docRef.id;
   }
 
@@ -215,16 +222,17 @@ export class FirebaseHoaStore implements HelperHoaStore {
     await db.collection('products').doc(id).delete();
   }
 
-  // Fetch all invoices, sorted by date (newest first)
+  // Fetch all invoices, newest first. Both writers store the date as
+  // invoiceDate; there is no `date` field, so ordering by it threw.
   async invoices(): Promise<InvoiceRecord[]> {
-    const query = db.collection('invoices').orderBy('date', 'desc');
+    const query = db.collection('invoices').orderBy('invoiceDate', 'desc');
     const snapshot = await query.get();
     
     return snapshot.docs.map((doc) => toInvoiceRecord(doc));
   }
 
-  // Map and save a new invoice
-  async createInvoice(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord> {
+  // Map and save a new invoice from a raw scanner payload
+  async createInvoiceFromScanner(rawScannerData: any, resolvedVendorId: string): Promise<InvoiceRecord> {
     // 1. Transform the raw payload into a Firestore-compatible object
     const firestoreInvoice = toFirestoreInvoice(rawScannerData, resolvedVendorId);
     

@@ -3,12 +3,22 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// Resolve absolute path to project root (not src)
-const serviceAccountPath = path.resolve(process.cwd(), '..','service-account.json');
+// The service account is the server tier's own credential, so it lives inside
+// server/ next to the code that uses it (see server/.env.example).
+//
+// Resolved relative to this module rather than process.cwd(): every npm script
+// runs from server/, but `npx tsx server/src/scripts/seed.ts` from the project
+// root does not, and a cwd-relative path silently fails in that case.
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const serviceAccountPath = path.resolve(moduleDir, '..', '..', 'service-account.json');
 
 if (!fs.existsSync(serviceAccountPath)) {
-  throw new Error(`Service account key not found at ${serviceAccountPath}. Ensure service-account.json is in your project root folder.`);
+  throw new Error(
+    `Service account key not found at ${serviceAccountPath}. ` +
+    'Place service-account.json in the server/ folder (see server/.env.example).',
+  );
 }
 
 const app = !getApps().length

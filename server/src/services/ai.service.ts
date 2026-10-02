@@ -15,12 +15,23 @@ export type ChatResponsePayload = {
 };
 
 export class AIService {
-  async chat(payload: ChatRequestPayload): Promise<ChatResponsePayload> {
+  /**
+   * `token` is the caller's Firebase ID token, taken from the Authorization
+   * header by requireAuth. It is forwarded so the Python tier can act as the
+   * logged-in user when its MCP tools read from this API.
+   */
+  async chat(
+    payload: ChatRequestPayload,
+    token: string,
+  ): Promise<ChatResponsePayload> {
     let response: Response;
     try {
       response = await fetch(`${aiConfig.pythonBaseUrl}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           message: payload.message,
           history: payload.history ?? [],

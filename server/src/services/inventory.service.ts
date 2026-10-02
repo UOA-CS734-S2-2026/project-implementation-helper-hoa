@@ -74,8 +74,7 @@ async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?:
     }
 
     if (results.length > 0) {
-      await this.store.createInvoice({
-        id: '',
+      await this.store.createConfirmedInvoice({
         supplierName: invoice.supplierName,
         invoiceNumber: invoice.invoiceNumber,
         receivedDate: invoice.receivedDate,

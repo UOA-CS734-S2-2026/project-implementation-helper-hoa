@@ -1,16 +1,19 @@
-import 'dotenv/config';
+import './config/env';
 import express from 'express';
 import cors from 'cors';
 import { createProductRoutes } from './routes/products.routes';
 import { createAIRoutes } from './routes/ai.routes';
 import { FirebaseHoaStore } from './store/store-firestore';
 import { globalErrorHandler } from './middlewares/errorHandler';
+import { AuthRequest, requireAuth, requireRole } from './middlewares/auth';
 import { InventoryService } from './services/inventory.service';
 import { createInvoiceRoutes } from './routes/invoices.routes';
 import { InvoiceService } from './services/invoice.service';  
 import { UserService } from './services/user.service';
 import { createUserRoutes } from './routes/user.routes';
 import { AIService } from './services/ai.service';
+import { AuthService } from './services/auth.service';
+import { createAuthRoutes } from './routes/auth.routes';
 import { ConfirmedInvoice } from './types';
 
 const app = express();
@@ -21,43 +24,50 @@ const inventoryService = new InventoryService(store);
 const invoiceService = new InvoiceService(store);
 const userService = new UserService(store);
 const aiService = new AIService();
+const authService = new AuthService();
 
 app.use(cors());
 app.use(express.json());
 app.use('/products', createProductRoutes(inventoryService, store));
 app.use('/invoices', createInvoiceRoutes(invoiceService, store));
 app.use('/users', createUserRoutes(userService, store));
+app.use('/auth', createAuthRoutes(authService, store));
 app.use('/api/ai', createAIRoutes(aiService));
 
-app.post('/api/invoices', async (request, response, next) => {
-  const body = request.body as Partial<ConfirmedInvoice>;
+app.post(
+  '/api/invoices',
+  requireAuth,
+  requireRole(['admin', 'manager'], store),
+  async (request: AuthRequest, response, next) => {
+    const body = request.body as Partial<ConfirmedInvoice>;
 
-  if (
-    typeof body.supplierName !== 'string' ||
-    typeof body.invoiceNumber !== 'string' ||
-    typeof body.receivedDate !== 'string' ||
-    !Array.isArray(body.items) ||
-    body.items.length === 0
-  ) {
-    response.status(400).json({
-      message: 'Supplier, invoice number, received date, and items are required.',
-    });
-    return;
-  }
+    if (
+      typeof body.supplierName !== 'string' ||
+      typeof body.invoiceNumber !== 'string' ||
+      typeof body.receivedDate !== 'string' ||
+      !Array.isArray(body.items) ||
+      body.items.length === 0
+    ) {
+      response.status(400).json({
+        message: 'Supplier, invoice number, received date, and items are required.',
+      });
+      return;
+    }
 
-  try {
-    const items = await inventoryService.confirmInvoice({
-      supplierName: body.supplierName,
-      invoiceNumber: body.invoiceNumber,
-      receivedDate: body.receivedDate,
-      items: body.items,
-    });
+    try {
+      const items = await inventoryService.confirmInvoice({
+        supplierName: body.supplierName,
+        invoiceNumber: body.invoiceNumber,
+        receivedDate: body.receivedDate,
+        items: body.items,
+      });
 
-    response.status(201).json({ items });
-  } catch (error) {
-    next(error);
-  }
-});
+      response.status(201).json({ items });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 app.use(globalErrorHandler);
 

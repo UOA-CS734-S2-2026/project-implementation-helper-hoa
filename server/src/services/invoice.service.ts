@@ -26,7 +26,7 @@ export class InvoiceService {
     const resolvedVendorId = rawScannerData.vendor.id || `vendor_${rawScannerData.vendor.name.toLowerCase().replace(/\s+/g, '_')}`;
 
     // Pass the data down to the store layer to be mapped and saved
-    return this.store.createInvoice(rawScannerData, resolvedVendorId);
+    return this.store.createInvoiceFromScanner(rawScannerData, resolvedVendorId);
   }
 
   async getAllInvoices(): Promise<InvoiceRecord[]> {
