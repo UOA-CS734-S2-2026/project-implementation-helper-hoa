@@ -18,7 +18,9 @@ export const globalErrorHandler = (
     // Map business logic errors from inventory.service.ts to HTTP status codes
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('not found')) {
+    if (lowerMessage.includes('already exists') || lowerMessage.includes('cannot delete') || lowerMessage.includes('cannot delete your own')) {
+      statusCode = 409;
+    } else if (lowerMessage.includes('not found')) {
       statusCode = 404; // Not Found
     } else if (
       lowerMessage.includes('insufficient stock') || 
@@ -33,6 +35,8 @@ export const globalErrorHandler = (
       statusCode = 401; // Unauthorized (Auth failure)
     }
   }
+
+  if (typeof err.status === 'number') statusCode = err.status;
 
   // Catch Firebase Admin SDK specific errors
   if (err.code && typeof err.code === 'string') {

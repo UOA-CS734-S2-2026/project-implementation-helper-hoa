@@ -78,9 +78,9 @@ class AppBottomNav extends StatelessWidget {
               blue: blue,
             ),
             _navItem(
-              index: 5,
+              index: 6,
               label: 'Search',
-              selected: selectedIndex == 5,
+              selected: selectedIndex == 6,
               normalIcon: Icons.search_outlined,
               selectedIcon: Icons.search_rounded,
               onTap: onItemSelected,

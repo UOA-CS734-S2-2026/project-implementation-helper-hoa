@@ -4,7 +4,9 @@ import {
   ConfirmedInvoice,
   NewBatch,
   NewProduct,
+  NewSale,
   ProductRecord,
+  SaleRecord,
 } from '../types';
 
 
@@ -105,11 +107,34 @@ async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?:
     product.sku = product.sku.trim().toUpperCase();
     
     // Business Rule: Prevent negative pricing
-    if (product.sellingPrice < 0 || product.costPrice < 0) {
+    if (!Number.isFinite(product.sellingPrice) || !Number.isFinite(product.costPrice) || product.sellingPrice < 0 || product.costPrice < 0) {
       throw new Error('Prices cannot be negative');
     }
 
     return this.store.createProduct(product);
+  }
+
+  async getProductBySku(sku: string): Promise<ProductRecord> {
+    const product = await this.store.productBySku(sku);
+    if (!product) throw new Error(`Product with SKU ${sku} not found`);
+    return product;
+  }
+
+  async createSale(sale: NewSale): Promise<SaleRecord> {
+    if (!Number.isInteger(sale.quantity) || sale.quantity <= 0) {
+      throw new Error('Sale quantity must be a positive whole number');
+    }
+    if (!Number.isFinite(sale.unitPrice) || sale.unitPrice < 0) {
+      throw new Error('Sale price cannot be negative');
+    }
+    if (!sale.productId && !sale.sku?.trim()) {
+      throw new Error('A product ID or SKU is required');
+    }
+    return this.store.recordSale({
+      ...sale,
+      sku: sale.sku?.trim().toUpperCase(),
+      paymentMethod: sale.paymentMethod.trim() || 'cash',
+    });
   }
 
   async receiveInventory(productId: string, batch: NewBatch) {
@@ -119,20 +144,39 @@ async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?:
     return this.store.createBatch(productId, batch);
   }
 
-  async sellProduct(id: string, quantity: number, batchNumber?: string): Promise<ProductRecord> {
+  async sellProduct(
+    id: string,
+    quantity: number,
+    batchNumber?: string,
+    unitPrice?: number,
+    soldBy?: string,
+    paymentMethod?: string,
+    unit?: string,
+  ): Promise<ProductRecord> {
     // Business Rule: Prevent zero or negative sale quantities
     if (quantity <= 0) {
       throw new Error('Sale quantity must be greater than zero');
     }
 
-    const updatedProduct = await this.store.sellProduct(id, quantity, batchNumber);
-    
-    // Safety net in case the store layer resolves with undefined
-    if (!updatedProduct) {
-      throw new Error(`Product with ID ${id} not found or failed to process sale`);
+    const product = await this.getProductById(id);
+
+    // The cashier may override the unit price at the till; fall back to the
+    // product's selling price when it is not supplied.
+    const resolvedUnitPrice = unitPrice ?? product.sellingPrice;
+    if (!Number.isFinite(resolvedUnitPrice) || resolvedUnitPrice < 0) {
+      throw new Error('Sale price cannot be negative');
     }
 
-    return updatedProduct;
+    // Stock deduction (FIFO, honouring batchNumber) and the sale ledger entry
+    // happen in a single store transaction.
+    await this.store.sellProduct(id, quantity, batchNumber, {
+      unitPrice: resolvedUnitPrice,
+      unit: unit?.trim() || product.unitOfMeasure,
+      paymentMethod: paymentMethod?.trim() || 'unspecified',
+      soldBy: soldBy || 'unknown',
+    });
+
+    return this.getProductById(id);
   }
 
   async updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord> {

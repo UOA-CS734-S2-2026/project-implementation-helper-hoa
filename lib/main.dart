@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'features/ask_hoa_page.dart';
 import 'features/home_page.dart';
@@ -7,6 +8,7 @@ import 'features/invoice_review_page.dart';
 import 'features/invoice_success_page.dart';
 import 'features/my_home.dart';
 import 'features/profile_page.dart';
+import 'features/search_page.dart';
 import 'features/sell_page.dart';
 import 'features/settings_page.dart';
 import 'features/snap_page.dart';
@@ -20,7 +22,13 @@ Future<void> main() async {
   // Restore a stored session before the first frame, so a signed-in user does
   // not see the login screen flash past.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // DevTestTokenProvider reads DEV_TEST_ID_TOKEN from here, so this has to
+  // complete before AuthController.restore() looks for a stored token.
+  await dotenv.load(fileName: '.env');
+
   await AuthController.instance.restore();
+
   runApp(const HelperHoaApp());
 }
 
@@ -96,6 +104,10 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
 
                 return InvoiceReviewPage(invoice: invoice);
               },
+            ),
+            GoRoute(
+              path: '/search',
+              builder: (context, state) => const SearchPage(),
             ),
           ],
         ),

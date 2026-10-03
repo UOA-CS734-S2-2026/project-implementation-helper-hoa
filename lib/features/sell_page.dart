@@ -11,7 +11,8 @@ class SellPage extends StatefulWidget {
 
 class _SellPageState extends State<SellPage> {
   int quantity = 2;
-  final double unitPrice = 18.5;
+  double unitPrice = 18.5;
+  String unit = 'each';
 
   double get total => quantity * unitPrice;
 
@@ -25,6 +26,101 @@ class _SellPageState extends State<SellPage> {
     setState(() {
       quantity++;
     });
+  }
+
+  Future<void> _editUnitPrice() async {
+    final result = await _promptForValue(
+      title: 'Unit price',
+      initialValue: unitPrice.toStringAsFixed(2),
+      helperText: 'Price charged for one unit at the till.',
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      validator: (raw) {
+        final parsed = double.tryParse(raw);
+        if (parsed == null) return 'Enter a number';
+        if (!parsed.isFinite || parsed < 0) return 'Price cannot be negative';
+        return null;
+      },
+    );
+
+    if (result != null) {
+      setState(() => unitPrice = double.parse(result));
+    }
+  }
+
+  Future<void> _editUnit() async {
+    final result = await _promptForValue(
+      title: 'Unit',
+      initialValue: unit,
+      helperText: 'For example each, box, pack, kg or litre.',
+      keyboardType: TextInputType.text,
+      validator: (raw) =>
+          raw.trim().isEmpty ? 'Enter a unit of measure' : null,
+    );
+
+    if (result != null) {
+      setState(() => unit = result.trim());
+    }
+  }
+
+  Future<String?> _promptForValue({
+    required String title,
+    required String initialValue,
+    required String helperText,
+    required TextInputType keyboardType,
+    required String? Function(String raw) validator,
+  }) async {
+    final controller = TextEditingController(text: initialValue);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        String? error;
+
+        void submit(StateSetter setDialogState) {
+          final message = validator(controller.text);
+          if (message != null) {
+            setDialogState(() => error = message);
+            return;
+          }
+          Navigator.of(dialogContext).pop(controller.text);
+        }
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(title),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: keyboardType,
+              decoration: InputDecoration(
+                helperText: helperText,
+                errorText: error,
+              ),
+              onChanged: (raw) {
+                final message = validator(raw);
+                if (message != error) {
+                  setDialogState(() => error = message);
+                }
+              },
+              onSubmitted: (_) => submit(setDialogState),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => submit(setDialogState),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    controller.dispose();
+    return result;
   }
 
   @override
@@ -251,12 +347,76 @@ class _SellPageState extends State<SellPage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        InkWell(
+                          onTap: _editUnitPrice,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '\$${unitPrice.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 15,
+                                  color: context.secondaryText,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Text(
-                          '\$${unitPrice.toStringAsFixed(2)}',
+                          'Unit',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: context.primaryText,
+                            fontSize: 13,
+                            color: context.secondaryText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: _editUnit,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  unit,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 15,
+                                  color: context.secondaryText,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
