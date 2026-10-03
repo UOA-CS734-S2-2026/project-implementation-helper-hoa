@@ -12,7 +12,7 @@ export function toProductBatch(data: any): ProductBatch {
     batchNumber: data.batchNumber,
     quantity: data.quantity,
     costPrice: data.costPrice,
-    expirationDate: data.expirationDate ? data.expirationDate.toDate() : new Date(), 
+    expirationDate: data.expirationDate ? data.expirationDate.toDate() : null as unknown as Date,
     receivedDate: data.receivedDate ? data.receivedDate.toDate() : new Date(),
     vendorId: data.vendorId,
     invoiceNumber: data.invoiceNumber,
@@ -25,6 +25,7 @@ export function toProductRecord(doc: DocumentSnapshot): ProductRecord {
   return {
     id: doc.id,
     sku: data.sku,
+    barcode: data.barcode ?? null,
     name: data.name,
     category: data.category,
     description: data.description,
@@ -50,11 +51,11 @@ export function toUser(doc: DocumentSnapshot): User {
   
   return {
     id: doc.id,
-    name: data.name,
-    lastName: data.lastName,
-    role: data.role, 
-    email: data.email,
-    phone: data.phone || "",
+    name: data.name ?? '',
+    lastName: data.lastName ?? '',
+    role: data.role ?? 'cashier',
+    email: data.email ?? '',
+    phone: data.phone ?? '',
   };
 }
 
@@ -96,10 +97,10 @@ export function toFirestoreProduct(product: NewProduct) {
   return {
     ...product,
     // Ensure initial values are set correctly for the database
-    totalStock: 0,
-    totalSold: 0,
+    totalStock: product.totalStock || 0,
+    totalSold: product.totalSold || 0,
     salesVelocity: 0,
-    batches: [],
+    batches: (product.batches || []).map(toFirestoreBatch),
     images: product.images || [],
     // Status must be one of your union string types, not a boolean
     status: product.status || 'out_of_stock' 

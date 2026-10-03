@@ -11,6 +11,8 @@ export type VendorRecord = {
   address: string | null;
 };
 
+export type NewVendor = Omit<VendorRecord, 'id'>;
+
 export type ProductBatch = {
   batchNumber: string;
   quantity: number;
@@ -24,6 +26,7 @@ export type ProductBatch = {
 export type ProductRecord = {
   id: string;
   sku: string;
+  barcode: string | null;
   name: string;
   category: string;
   description: string;
@@ -45,6 +48,7 @@ export type ProductRecord = {
   batches: ProductBatch[]; 
 };
 
+
 export type User = {
   id: string;
   name: string;
@@ -52,6 +56,42 @@ export type User = {
   role: 'admin' | 'manager' | 'cashier';
   email: string;
   phone: string;
+};
+
+export type NewUser = Omit<User, 'id'> & { password: string };
+
+export type SaleRecord = {
+  id: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  unit: string;
+  totalPrice: number;
+  paymentMethod: string;
+  soldBy: string;
+  soldAt: string;
+};
+
+// Sale metadata attached to a stock deduction. The cashier may override the
+// unit of measure and the unit price at the till, so both are recorded on the
+// sale document rather than being read back off the product.
+export type SaleLog = {
+  unitPrice: number;
+  unit?: string;
+  paymentMethod?: string;
+  soldBy?: string;
+};
+
+export type NewSale = {
+  productId?: string;
+  sku?: string;
+  quantity: number;
+  unitPrice: number;
+  unit?: string;
+  paymentMethod: string;
+  soldBy: string;
 };
 
 export type InvoiceLineItem = {
@@ -98,8 +138,14 @@ export type InvoiceRecord = {
 
 
 
-export type NewProduct = Omit<ProductRecord, 'id' | 'totalStock' | 'totalSold' | 'salesVelocity' | 'batches'>;
-export type NewBatch = ProductBatch;
+// totalStock / totalSold / batches are derived state. Callers that upsert a
+// bare product (invoice confirmation) omit them and toFirestoreProduct defaults
+// them; the admin UI may supply an opening stock explicitly.
+export type NewProduct = Omit<ProductRecord, 'id' | 'totalStock' | 'totalSold' | 'salesVelocity' | 'batches' | 'barcode'>
+  & Partial<Pick<ProductRecord, 'totalStock' | 'totalSold' | 'batches' | 'barcode'>>;
+// Non-stock batches carry no expiry; toFirestoreBatch omits the field entirely
+// rather than writing undefined, which Firestore rejects.
+export type NewBatch = Omit<ProductBatch, 'expirationDate'> & { expirationDate?: Date };
 
 // Payload for confirming an invoice: each line item upserts a product + batch.
 export type ConfirmedInvoiceItem = {
@@ -130,4 +176,30 @@ export type ConfirmResultItem = {
 };
 
 
+export type InventoryAlertSeverity = 'urgent' | 'very_low' | 'low' | 'expiring_soon';
 
+export type InventoryAlertReason = 'out_of_stock' | 'low_stock' | 'expiring_soon';
+
+export type InventoryAlert = {
+  productId: string;
+  productName: string;
+  vendorName: string | null;
+  totalSold: number;
+
+  quantityRemaining: number;
+  unitOfMeasure: string;
+  reorderPoint: number;
+
+  nearestExpiryDate: Date | null;
+  daysUntilExpiry: number | null;
+
+  severity: InventoryAlertSeverity;
+  reasons: InventoryAlertReason[];
+};
+
+export type InventoryAlertResponse = Omit<
+  InventoryAlert,
+  'nearestExpiryDate'
+> & {
+  nearestExpiryDate: string | null;
+};

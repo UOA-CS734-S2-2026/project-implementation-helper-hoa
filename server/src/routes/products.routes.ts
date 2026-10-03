@@ -7,6 +7,17 @@ import { AuthRequest, requireAuth, requireRole } from '../middlewares/auth';
 export function createProductRoutes(service: InventoryService, store: HelperHoaStore): Router {
   const router = Router();
 
+  router.get('/sku/:sku',
+    requireAuth,
+    requireRole(['admin', 'manager', 'cashier'], store),
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+      try {
+        const sku = Array.isArray(req.params.sku) ? req.params.sku[0] : req.params.sku;
+        res.status(200).json(await service.getProductBySku(sku));
+      } catch (error) { next(error); }
+    },
+  );
+
   router.get('/', 
     requireAuth, 
     requireRole(['admin', 'manager', 'cashier'], store), 
@@ -69,8 +80,16 @@ export function createProductRoutes(service: InventoryService, store: HelperHoaS
     async (req: AuthRequest, res: Response, next: NextFunction) => {
       try {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const { quantity, batchNumber } = req.body;
-        const updatedProduct = await service.sellProduct(id, quantity, batchNumber);
+        const { quantity, batchNumber, unitPrice, unit, paymentMethod } = req.body;
+        const updatedProduct = await service.sellProduct(
+          id,
+          quantity,
+          batchNumber,
+          unitPrice,
+          req.token?.uid,
+          paymentMethod,
+          unit,
+        );
         res.status(200).json(updatedProduct);
       } catch (error) {
         next(error);

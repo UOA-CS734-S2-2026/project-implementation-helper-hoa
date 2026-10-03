@@ -52,3 +52,7 @@ python/self_run.txt
 server/data/confirmed-invoices.json
 .flutter-plugins-dependencies
 build/e09161ed6a8240f7110db5db6f6e90b3.cache.dill.track.dill
+
+/build/
+.dart_tool/
+server/node_modules/
