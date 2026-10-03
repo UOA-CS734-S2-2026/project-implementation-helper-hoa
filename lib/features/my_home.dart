@@ -38,6 +38,10 @@ class MyHome extends StatelessWidget {
         case '/search':
           selectedIndex = 6;
           break;
+        // Reached by searching from the home page, so the Search tab stays lit.
+        case '/inventory':
+          selectedIndex = 6;
+          break;
         default:
           selectedIndex = 1;
       }
@@ -66,9 +70,6 @@ class MyHome extends StatelessWidget {
               break;
             case 5:
               context.go('/profile');
-              break;
-            case 5:
-              context.go('/inventory');
               break;
             case 6:
               context.go('/search');
@@ -188,8 +189,52 @@ class _HomePageContent extends StatelessWidget {
                 ),
               ],
             ),
-
-            
+            const SizedBox(height: 18),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => context.go('/inventory'),
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF4E6CD6)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF4E6CD6), width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

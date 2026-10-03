@@ -1,7 +1,8 @@
 
 import 'package:flutter/material.dart';
 import '../theme_extensions.dart';
-import 'product_class.dart';
+import '../services/product_api_service.dart';
+import 'product_page.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -11,9 +12,9 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  //TODO:Implement fetching items from server and displaying them in a list view
-  final List<Product> _items = Product.getAllProducts();
+  late Future<List<Product>> _itemsFuture;
 
+  List<Product> _items = [];
   List<Product> _filteredItems = [];
   String _searchQuery = '';
   String selectedCategory = 'All';
@@ -22,7 +23,13 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _filteredItems = _items;
+    _itemsFuture = Product.getAllProducts();
+    _itemsFuture.then((value) {
+      setState(() {
+        _items = value;
+        _filteredItems = _items;
+      });
+    });
   }
 
   void _filterItems() {
@@ -66,6 +73,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
         )
       ),
+      
       body: Column(
         children: [
           Padding(
@@ -153,83 +161,103 @@ class _InventoryPageState extends State<InventoryPage> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _filteredItems.length,
-              itemBuilder: (context, index) {
-                final Product item = _filteredItems[index];
-                final Color urgencyColor = switch (item.status) {
-                  1 => const Color(0xFFF59E0B),
-                  2 => const Color(0xFFE74C3C),
-                  _ => Colors.grey,
-                };
-              
-                return Card.outlined(
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    splashColor: Colors.blue.withAlpha(30),
-                    onTap: () {
-                      debugPrint('Card tapped.');
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
+            child: FutureBuilder<List<Product>>(
+              future: _itemsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No products found.'));
+                } else {
+                  return ListView.builder(
+                    itemCount: _filteredItems.length,
+                    itemBuilder: (context, index) {
+                      final Product item = _filteredItems[index];
+                      final Color urgencyColor = switch (item.status) {
+                        "1" => const Color(0xFFF59E0B),
+                        "2" => const Color(0xFFE74C3C),
+                        _ => Colors.grey,
+                      };
+                    
+                      return Card.outlined(
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          splashColor: Colors.blue.withAlpha(30),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductPage(itemID: item.id),
+                              ),
+                            );
+                          
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Text(
-                                    item.name,
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                        ),
+                                        Text('Category: ${item.category}'),
+                                        Text('Price: ${item.sellingPrice}'),
+                                        Text('Quantity: ${item.totalStock}'),
+                                      ],
+                                    ),
                                   ),
-                                  Text('Category: ${item.category}'),
-                                  Text('Price: ${item.sellingPrice}'),
-                                  Text('Quantity: ${item.totalStock}'),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                if (item.status.isNotEmpty)
-                                  Text(
-                                    '${item.status}',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
-                                    color: urgencyColor)
-                                    ),
-                                  
-                                  Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: urgencyColor.withValues(alpha: 0.14),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    item.status == 'Low Stock' ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
-                                    color: urgencyColor,
-                                    size: 20,
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      if (item.status.isNotEmpty)
+                                        Text(
+                                          '${item.status}',
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+                                          color: urgencyColor)
+                                          ),
+                                        
+                                        Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: BoxDecoration(
+                                          color: urgencyColor.withValues(alpha: 0.14),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          item.status == 'Low Stock' ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+                                          color: urgencyColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],)
-                      ]
-                    ) 
-                  )
-                );
+                              ],)
+                            ]
+                          ) 
+                        )
+                      );
+                    },
+                  );
+                }
               },
+              
             ),
           ),
         ],
