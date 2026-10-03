@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../services/inventory_alert_service.dart';
 import '../theme_extensions.dart';
 import '../models/inventory_alert.dart';
 import '../services/inventory_alert_api_service.dart';
@@ -15,63 +15,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final InventoryAlertApiService _alertApi =
-      widget.alertApi ?? InventoryAlertApiService();
-  final Set<String> _expandedAlertIds = {};
-
-  List<InventoryAlert> _alerts = [];
-  Object? _alertError;
-  bool _isLoadingAlerts = true;
+  final _alertService = InventoryAlertService();
+  late Future<List<InventoryAlert>> _alertsFuture;
 
   @override
   void initState() {
     super.initState();
-    _loadInventoryAlerts();
+    _alertsFuture = _alertService.fetchAlerts();
   }
 
-  Future<void> _loadInventoryAlerts() async {
-    setState(() {
-      _isLoadingAlerts = true;
-      _alertError = null;
-    });
-
+  Future<void> _reloadAlerts() async {
+    final future = _alertService.fetchAlerts();
+    setState(() => _alertsFuture = future);
     try {
-      final alerts = await _alertApi.getAlerts();
-
-      if (!mounted) {
-        return;
-      }
-
-      final sortedAlerts = [...alerts]..sort(
-          (a, b) => _severityRank(a.severity).compareTo(
-            _severityRank(b.severity),
-          ),
-        );
-
-      setState(() {
-        _alerts = sortedAlerts;
-        _isLoadingAlerts = false;
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _alertError = error;
-        _isLoadingAlerts = false;
-      });
+      await future;
+    } catch (_) {
+      // Error is rendered by the FutureBuilder.
     }
-  }
-
-  int _severityRank(String severity) {
-    return switch (severity) {
-      'urgent' => 0,
-      'very_low' => 1,
-      'low' => 2,
-      'expiring_soon' => 3,
-      _ => 4,
-    };
   }
 
   @override
@@ -448,29 +408,72 @@ class _HomePageState extends State<HomePage> {
                         alert.nearestExpiryDate!,
                       ),
               ),
-              _alertDetail(context, 'Reorder point',
-                  '${alert.reorderPoint} ${alert.unitOfMeasure}'),
-            ],
+            ),
+          if (alert.batches.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Batches',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: context.primaryText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            ...alert.batches.map(
+              (batch) => Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${batch.batchNumber}  •  ${_formatQty(batch.quantity)} '
+                  '${alert.unitOfMeasure}(s)\n'
+                  'Received ${_formatDate(batch.receivedDate)}  •  '
+                  'Expires ${_formatDate(batch.expirationDate)}\n'
+                  'Invoice ${batch.invoiceNumber.isEmpty ? '—' : batch.invoiceNumber}',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: context.secondaryText,
+                  ),
+                ),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
+}
 
-  Widget _alertDetail(BuildContext context, String label, String value) {
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 112,
-            child: Text(label, style: TextStyle(color: context.secondaryText)),
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12, color: context.secondaryText),
+            ),
           ),
           Expanded(
             child: Text(
-              value,
+              value.isEmpty ? '—' : value,
               style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: context.primaryText,
               ),

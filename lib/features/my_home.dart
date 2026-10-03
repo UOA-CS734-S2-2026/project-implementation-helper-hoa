@@ -17,29 +17,17 @@ class MyHome extends StatelessWidget {
     int selectedIndex = 0;
 
     if (location.startsWith('/snap')) {
-      selectedIndex = 0;
+      selectedIndex = 1;
     } else {
       switch (location) {
-        case '/':
-          selectedIndex = 1;
-          break;
-        case '/stock':
+        case '/ask-hoa':
           selectedIndex = 2;
           break;
-        case '/sell':
+        case '/profile':
           selectedIndex = 3;
           break;
-        case '/ask-hoa':
-          selectedIndex = 4;
-          break;
-        case '/profile':
-          selectedIndex = 5;
-          break;
-        case '/inventory':
-          selectedIndex = 6;
-          break;
         default:
-          selectedIndex = 1;
+          selectedIndex = 0;
       }
     }
 
@@ -50,25 +38,16 @@ class MyHome extends StatelessWidget {
         onItemSelected: (index) {
           switch (index) {
             case 0:
-              context.go('/snap');
-              break;
-            case 1:
               context.go('/');
               break;
+            case 1:
+              context.go('/snap');
+              break;
             case 2:
-              context.go('/stock');
-              break;
-            case 3:
-              context.go('/sell');
-              break;
-            case 4:
               context.go('/ask-hoa');
               break;
-            case 5:
+            case 3:
               context.go('/profile');
-              break;
-            case 6:
-              context.go('/inventory');
               break;
           }
         },

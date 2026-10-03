@@ -1,18 +1,4 @@
-import {
-  ConfirmedInvoice,
-  InvoiceRecord,
-  NewBatch,
-  NewProduct,
-  NewSale,
-  NewUser,
-  NewVendor,
-  ProductBatch,
-  ProductRecord,
-  SaleLog,
-  SaleRecord,
-  User,
-  VendorRecord,
-} from '../types';
+import { ConfirmedInvoice, InvoiceRecord, NewBatch, NewProduct, ProductBatch, ProductRecord, User, VendorRecord } from "../types";
 
 export type HelperHoaStore = {
   // Read operations
@@ -21,6 +7,7 @@ export type HelperHoaStore = {
   productBySku(sku: string): Promise<ProductRecord | undefined>;
   users(): Promise<User[]>;
   user(id: string): Promise<User | undefined>;
+  vendors(): Promise<VendorRecord[]>;
   invoices(): Promise<InvoiceRecord[]>;
   vendors(): Promise<VendorRecord[]>;
   vendor(id: string): Promise<VendorRecord | undefined>;
