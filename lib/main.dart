@@ -8,7 +8,6 @@ import 'features/invoice_review_page.dart';
 import 'features/invoice_success_page.dart';
 import 'features/my_home.dart';
 import 'features/profile_page.dart';
-import 'features/search_page.dart';
 import 'features/sell_page.dart';
 import 'features/settings_page.dart';
 import 'features/snap_page.dart';
@@ -23,12 +22,13 @@ Future<void> main() async {
   // not see the login screen flash past.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // DevTestTokenProvider reads DEV_TEST_ID_TOKEN from here, so this has to
-  // complete before AuthController.restore() looks for a stored token.
+  // Must complete before anything reads DEV_TEST_ID_TOKEN:
+  // DevTestTokenProvider (lib/services/dev_test_token_provider.dart) touches
+  // dotenv.env, and inventory_alert_api_service.dart calls it when no user is
+  // signed in. Loading dotenv after restore() would throw instead of falling back.
   await dotenv.load(fileName: '.env');
 
   await AuthController.instance.restore();
-
   runApp(const HelperHoaApp());
 }
 
@@ -99,7 +99,7 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
             ),
             GoRoute(
               path: '/inventory',
-              builder: (context, state) => const InventoryPage(),
+              builder: (context, state) => const InventoryPage(search: ""),
             ),
             GoRoute(
               path: '/snap/review',
@@ -108,10 +108,6 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
 
                 return InvoiceReviewPage(invoice: invoice);
               },
-            ),
-            GoRoute(
-              path: '/search',
-              builder: (context, state) => const SearchPage(),
             ),
           ],
         ),

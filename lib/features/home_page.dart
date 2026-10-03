@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../theme_extensions.dart';
 import '../models/inventory_alert.dart';
 import '../services/inventory_alert_api_service.dart';
+import 'inventory_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.alertApi});
@@ -139,6 +140,62 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: context.cardBackground,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => InventoryPage(search: value),
+                    ),
+                  );
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search products, orders...',
+                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Color(0xFF4E6CD6)),
+                  filled: true,
+                  fillColor: context.cardBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF4E6CD6),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                ),
               ),
             ),
             Expanded(

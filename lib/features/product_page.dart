@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 class ProductPage extends StatefulWidget {
   final int itemID;
-  const ProductPage({Key? key, required this.itemID}) : super(key: key);
+  const ProductPage({super.key, required this.itemID});
 
   @override
   State<ProductPage> createState() => _ProductPageState();

@@ -35,10 +35,6 @@ class MyHome extends StatelessWidget {
         case '/profile':
           selectedIndex = 5;
           break;
-        case '/search':
-          selectedIndex = 6;
-          break;
-        // Reached by searching from the home page, so the Search tab stays lit.
         case '/inventory':
           selectedIndex = 6;
           break;
@@ -72,7 +68,7 @@ class MyHome extends StatelessWidget {
               context.go('/profile');
               break;
             case 6:
-              context.go('/search');
+              context.go('/inventory');
               break;
           }
         },
@@ -203,8 +199,6 @@ class _HomePageContent extends StatelessWidget {
                 ],
               ),
               child: TextField(
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => context.go('/inventory'),
                 decoration: InputDecoration(
                   hintText: 'Search...',
                   hintStyle: TextStyle(color: Colors.grey.shade500),
