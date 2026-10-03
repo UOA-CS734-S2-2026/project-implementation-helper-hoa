@@ -35,6 +35,9 @@ class MyHome extends StatelessWidget {
         case '/profile':
           selectedIndex = 5;
           break;
+        case '/inventory':
+          selectedIndex = 6;
+          break;
         default:
           selectedIndex = 1;
       }
@@ -64,7 +67,7 @@ class MyHome extends StatelessWidget {
             case 5:
               context.go('/profile');
               break;
-            case 5:
+            case 6:
               context.go('/inventory');
               break;
           }
