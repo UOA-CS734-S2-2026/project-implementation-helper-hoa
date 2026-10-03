@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'features/ask_hoa_page.dart';
 import 'features/home_page.dart';
@@ -20,6 +21,13 @@ Future<void> main() async {
   // Restore a stored session before the first frame, so a signed-in user does
   // not see the login screen flash past.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Must complete before anything reads DEV_TEST_ID_TOKEN:
+  // DevTestTokenProvider (lib/services/dev_test_token_provider.dart) touches
+  // dotenv.env, and inventory_alert_api_service.dart calls it when no user is
+  // signed in. Loading dotenv after restore() would throw instead of falling back.
+  await dotenv.load(fileName: '.env');
+
   await AuthController.instance.restore();
   runApp(const HelperHoaApp());
 }

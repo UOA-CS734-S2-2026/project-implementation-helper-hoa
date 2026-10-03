@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/inventory_alert_service.dart';
 import '../theme_extensions.dart';
+import '../models/inventory_alert.dart';
+import '../services/inventory_alert_api_service.dart';
 import 'inventory_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.alertApi});
+
+  final InventoryAlertApiService? alertApi;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -34,533 +38,375 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _reloadAlerts,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 18),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  decoration: BoxDecoration(
-                    color: context.cardBackground,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 12,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              decoration: BoxDecoration(
+                color: context.cardBackground,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: 154,
-                            height: 56,
-                            child: Image.asset(
-                              'assets/logo.png',
-                              fit: BoxFit.contain,
-                              alignment: Alignment.centerLeft,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                  child: Icon(
-                                    Icons.business_center_rounded,
-                                    size: 30,
-                                    color: Color(0xFF4E6CD6),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: context.cardBackground,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: TextField(
-                          onSubmitted: (value) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    InventoryPage(search: value),
+                      SizedBox(
+                        width: 154,
+                        height: 56,
+                        child: Image.asset(
+                          'assets/logo.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerLeft,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.business_center_rounded,
+                                size: 30,
+                                color: Color(0xFF4E6CD6),
                               ),
                             );
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Search products, orders...',
-                            hintStyle: TextStyle(color: Colors.grey.shade500),
-                            prefixIcon: const Icon(Icons.search,
-                                color: Color(0xFF4E6CD6)),
-                            filled: true,
-                            fillColor: context.cardBackground,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF4E6CD6)
-                                    .withValues(alpha: 0.2),
-                              ),
+                        ),
+                      ),
+                      Tooltip(
+                        message: 'Profile',
+                        child: InkWell(
+                          onTap: () => context.go('/profile'),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFDF58),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: const Color(0xFF4E6CD6)
-                                    .withValues(alpha: 0.2),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF4E6CD6),
-                                width: 1.5,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 15,
+                            child: const Icon(
+                              Icons.person_outline_rounded,
+                              color: Color(0xFF4E6CD6),
+                              size: 23,
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: context.cardBackground,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => InventoryPage(search: value),
+                    ),
+                  );
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search products, orders...',
+                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Color(0xFF4E6CD6)),
+                  filled: true,
+                  fillColor: context.cardBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF4E6CD6).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF4E6CD6),
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Inventory alerts',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: context.primaryText,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadInventoryAlerts,
+                          child: const Text(
+                            'Refresh',
+                            style: TextStyle(
+                              color: Color(0xFF4E6CD6),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: _buildAlertContent(context),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlertContent(BuildContext context) {
+    if (_isLoadingAlerts) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF4E6CD6),
+        ),
+      );
+    }
+
+    if (_alertError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Could not load inventory alerts.\n$_alertError',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.secondaryText, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _loadInventoryAlerts,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_alerts.isEmpty) {
+      return Center(
+        child: Text(
+          'No inventory alerts.',
+          style: TextStyle(
+            color: context.secondaryText,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadInventoryAlerts,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _alerts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          return _buildAlertCard(context, _alerts[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAlertCard(BuildContext context, InventoryAlert alert) {
+    final isUrgent = alert.severity == 'urgent';
+    final isVeryLow = alert.severity == 'very_low';
+    final isExpanded = _expandedAlertIds.contains(alert.productId);
+    final accent = isUrgent
+        ? const Color(0xFFE74C3C)
+        : isVeryLow
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF4E6CD6);
+
+    final expiryText = alert.daysUntilExpiry == null
+        ? 'No expiry date'
+        : alert.daysUntilExpiry! < 0
+            ? 'Expired ${alert.daysUntilExpiry!.abs()} days ago'
+            : alert.daysUntilExpiry == 0
+                ? 'Expires today'
+                : alert.daysUntilExpiry == 1
+                    ? 'Expires tomorrow'
+                    : 'Expires in ${alert.daysUntilExpiry} days';
+
+    final status = switch (alert.severity) {
+      'urgent' => 'Urgent',
+      'very_low' => 'Very low',
+      'low' => 'Low',
+      'expiring_soon' => 'Expiring soon',
+      _ => 'Alert',
+    };
+
+    return InkWell(
+      onTap: () => setState(() {
+        if (isExpanded) {
+          _expandedAlertIds.remove(alert.productId);
+        } else {
+          _expandedAlertIds.add(alert.productId);
+        }
+      }),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isUrgent
+                        ? Icons.warning_amber_rounded
+                        : Icons.info_outline_rounded,
+                    color: accent,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Inventory alerts',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: context.primaryText,
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: _reloadAlerts,
-                            icon: const Icon(
-                              Icons.refresh_rounded,
-                              size: 18,
-                              color: Color(0xFF4E6CD6),
-                            ),
-                            label: const Text(
-                              'Refresh',
+                          Expanded(
+                            child: Text(
+                              alert.productName,
                               style: TextStyle(
-                                color: Color(0xFF4E6CD6),
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
+                                color: context.primaryText,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      FutureBuilder<List<InventoryAlert>>(
-                        future: _alertsFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState !=
-                              ConnectionState.done) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-
-                          if (snapshot.hasError) {
-                            return _AlertsMessage(
-                              icon: Icons.cloud_off_rounded,
-                              message: snapshot.error
-                                  .toString()
-                                  .replaceFirst('Exception: ', ''),
-                              actionLabel: 'Retry',
-                              onAction: _reloadAlerts,
-                            );
-                          }
-
-                          final alerts = snapshot.data ?? const [];
-                          if (alerts.isEmpty) {
-                            return const _AlertsMessage(
-                              icon: Icons.check_circle_outline_rounded,
-                              message: 'All stock levels look healthy.',
-                            );
-                          }
-
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: alerts.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 10),
-                            itemBuilder: (context, index) => _AlertCard(
-                              key: ValueKey(alerts[index].productId),
-                              alert: alerts[index],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-Color _levelColor(String level) {
-  switch (level) {
-    case 'Urgent':
-      return const Color(0xFFE74C3C);
-    case 'Very low':
-      return const Color(0xFFF97316);
-    case 'Low':
-      return const Color(0xFFF59E0B);
-    case 'Expiring soon':
-      return const Color(0xFF8B5CF6);
-    default:
-      return const Color(0xFF4E6CD6);
-  }
-}
-
-String _formatDate(DateTime? date) {
-  if (date == null) return '—';
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  final local = date.toLocal();
-  return '${local.day} ${months[local.month - 1]} ${local.year}';
-}
-
-String _formatQty(num value) => value == value.roundToDouble()
-    ? value.toInt().toString()
-    : value.toString();
-
-String _expiryLabel(int? days) {
-  if (days == null) return 'No expiry date';
-  if (days < 0) return 'Expired ${-days} day${days == -1 ? '' : 's'} ago';
-  if (days == 0) return 'Expires today';
-  return 'Expires in $days day${days == 1 ? '' : 's'}';
-}
-
-class _AlertsMessage extends StatelessWidget {
-  const _AlertsMessage({
-    required this.icon,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final IconData icon;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF4E6CD6)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: context.secondaryText, fontSize: 13),
-            ),
-          ),
-          if (actionLabel != null)
-            TextButton(onPressed: onAction, child: Text(actionLabel!)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AlertCard extends StatefulWidget {
-  const _AlertCard({super.key, required this.alert});
-
-  final InventoryAlert alert;
-
-  @override
-  State<_AlertCard> createState() => _AlertCardState();
-}
-
-class _AlertCardState extends State<_AlertCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final alert = widget.alert;
-    final accent = _levelColor(alert.level);
-    final urgent = alert.level == 'Urgent';
-    final unit = alert.unitOfMeasure;
-
-    return Material(
-      color: context.cardBackground,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 0,
-      shadowColor: Colors.black12,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => setState(() => _expanded = !_expanded),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _expanded
-                  ? accent.withValues(alpha: 0.5)
-                  : Colors.transparent,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        urgent
-                            ? Icons.warning_amber_rounded
-                            : Icons.info_outline_rounded,
-                        color: accent,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  alert.name,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.primaryText,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: accent.withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  alert.level,
-                                  style: TextStyle(
-                                    color: accent,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_formatQty(alert.totalStock)} ${unit}s left',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: context.primaryText,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _expiryLabel(alert.daysToExpiry),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: context.secondaryText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      _expanded
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
-                      color: context.secondaryText,
-                    ),
-                  ],
-                ),
-                if (_expanded) _buildDetails(context, alert, accent),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetails(
-    BuildContext context,
-    InventoryAlert alert,
-    Color accent,
-  ) {
-    final vendors = <String, AlertVendor>{
-      for (final batch in alert.batches)
-        if (batch.vendor != null) batch.vendor!.name: batch.vendor!,
-    };
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Divider(height: 1, color: accent.withValues(alpha: 0.2)),
-          const SizedBox(height: 10),
-          if (alert.reasons.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: alert.reasons
-                  .map(
-                    (reason) => Chip(
-                      label: Text(reason),
-                      labelStyle: TextStyle(
-                        fontSize: 11,
-                        color: accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      backgroundColor: accent.withValues(alpha: 0.08),
-                      side: BorderSide.none,
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 10),
-          ],
-          _DetailRow(label: 'SKU', value: alert.sku),
-          _DetailRow(label: 'Category', value: alert.category),
-          _DetailRow(
-            label: 'Remaining stock',
-            value: '${_formatQty(alert.totalStock)} ${alert.unitOfMeasure}(s)',
-          ),
-          _DetailRow(
-            label: 'Reorder point',
-            value:
-                '${_formatQty(alert.reorderPoint)} ${alert.unitOfMeasure}(s)',
-          ),
-          _DetailRow(
-            label: 'Nearest expiry',
-            value: _formatDate(alert.nearestExpiry),
-          ),
-          _DetailRow(
-            label: 'Selling price',
-            value: '\$${alert.sellingPrice.toStringAsFixed(2)}',
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Vendor',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: context.primaryText,
-            ),
-          ),
-          const SizedBox(height: 4),
-          if (vendors.isEmpty)
-            Text(
-              'No vendor on record',
-              style: TextStyle(fontSize: 12, color: context.secondaryText),
-            )
-          else
-            ...vendors.values.map(
-              (vendor) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      vendor.name,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: context.primaryText,
-                      ),
-                    ),
-                    if (vendor.phone != null || vendor.email != null)
+                      const SizedBox(height: 4),
                       Text(
-                        [vendor.phone, vendor.email]
-                            .whereType<String>()
-                            .join('  •  '),
+                        '${alert.quantityRemaining} ${alert.unitOfMeasure} left',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        expiryText,
                         style: TextStyle(
                           fontSize: 11.5,
                           color: context.secondaryText,
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
+                Icon(
+                  isExpanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  color: context.secondaryText,
+                ),
+              ],
+            ),
+            if (isExpanded) ...[
+              const Divider(height: 24),
+              _alertDetail(
+                  context, 'Vendor', alert.vendorName ?? 'Not available'),
+              _alertDetail(context, 'Total sold',
+                  '${alert.totalSold} ${alert.unitOfMeasure}'),
+              _alertDetail(
+                context,
+                'Expiration date',
+                alert.nearestExpiryDate == null
+                    ? 'Not available'
+                    : MaterialLocalizations.of(context).formatCompactDate(
+                        alert.nearestExpiryDate!,
+                      ),
               ),
             ),
           if (alert.batches.isNotEmpty) ...[

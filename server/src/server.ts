@@ -15,9 +15,12 @@ import { AIService } from './services/ai.service';
 import { AuthService } from './services/auth.service';
 import { createAuthRoutes } from './routes/auth.routes';
 import { ConfirmedInvoice } from './types';
+import { createInventoryAlertRoutes } from './routes/inventory-alerts.routes';
+import { InventoryAlertService } from './services/inventory-alert.service';
+import { createAdminRoutes } from './routes/admin.routes';
 
 const app = express();
-const port = Number(process.env.PORT) || 3000;
+const port = Number(Number(process.env.PORT)) || 3000;
 
 const store = new FirebaseHoaStore();
 const inventoryService = new InventoryService(store);
@@ -25,10 +28,32 @@ const invoiceService = new InvoiceService(store);
 const userService = new UserService(store);
 const aiService = new AIService();
 const authService = new AuthService();
+const inventoryAlertService = new InventoryAlertService(store);
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173,http://localhost:3000,http://localhost:8080')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    const error = new Error('Origin is not allowed by CORS') as Error & { status?: number };
+    error.status = 403;
+    callback(error);
+  },
+}));
+app.use(express.json({ limit: '1mb' }));
 app.use('/products', createProductRoutes(inventoryService, store));
+app.use('/admin', createAdminRoutes(store, inventoryService));
+app.use(
+  '/inventory-alerts',
+  createInventoryAlertRoutes(inventoryAlertService, store),
+);
+
 app.use('/invoices', createInvoiceRoutes(invoiceService, store));
 app.use('/users', createUserRoutes(userService, store));
 app.use('/auth', createAuthRoutes(authService, store));
@@ -75,3 +100,4 @@ app.use(globalErrorHandler);
 app.listen(port, () => {
   console.log(`Helper Hoa API is running at http://localhost:${port}`);
 });
+
