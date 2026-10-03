@@ -1,8 +1,8 @@
 import { HelperHoaStore } from '../store';
 import {
-  InventoryAlert,
+  StockAlert,
   InventoryAlertReason,
-  InventoryAlertResponse,
+  StockAlertResponse,
   InventoryAlertSeverity,
   ProductRecord,
 } from '../types';
@@ -12,19 +12,19 @@ const millisecondsPerDay = 24 * 60 * 60 * 1000;
 export class InventoryAlertService {
   constructor(private readonly store: HelperHoaStore) {}
 
-  async getAlerts(): Promise<InventoryAlertResponse[]> {
+  async getAlerts(): Promise<StockAlertResponse[]> {
     const products = await this.store.products({ activeOnly: true });
     const alerts = await Promise.all(products.map((product) => this.createAlert(product)));
 
     return alerts
-        .filter((alert): alert is InventoryAlert => alert !== null)
+        .filter((alert): alert is StockAlert => alert !== null)
         .map((alert) => ({
           ...alert,
           nearestExpiryDate: alert.nearestExpiryDate?.toISOString() ?? null,
         }));
   }
 
-  private async createAlert(product: ProductRecord): Promise<InventoryAlert | null> {
+  private async createAlert(product: ProductRecord): Promise<StockAlert | null> {
     if (!product.unitOfMeasure || product.reorderPoint == null) {
       return null;
     }
@@ -41,7 +41,8 @@ export class InventoryAlertService {
         .filter((batch) => batch.quantity > 0 && batch.expirationDate)
         .sort(
           (first, second) =>
-            first.expirationDate.getTime() - second.expirationDate.getTime(),
+            (first.expirationDate?.getTime() ?? 0) -
+            (second.expirationDate?.getTime() ?? 0),
         );
 
     const nearestExpiryDate = activeBatches[0]?.expirationDate ?? null;

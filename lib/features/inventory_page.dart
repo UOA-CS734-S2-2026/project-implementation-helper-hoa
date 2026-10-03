@@ -28,9 +28,11 @@ class _InventoryPageState extends State<InventoryPage> {
     _itemsFuture.then((value) {
       setState(() {
         _items = value;
-        _filteredItems = _items;
         _searchQuery = widget.search;
       });
+      // Apply the query the home page search bar passed in, otherwise the list
+      // is rendered unfiltered on arrival.
+      _filterItems();
     });
   }
 
@@ -50,10 +52,10 @@ class _InventoryPageState extends State<InventoryPage> {
           _filteredItems.sort((a, b) => b.name.compareTo(a.name));
           break;
         case 'Price Ascending':
-          _filteredItems.sort((a, b) => double.parse(a.sellingPrice.substring(1)).compareTo(double.parse(b.sellingPrice.substring(1))));
+          _filteredItems.sort((a, b) => a.sellingPrice.compareTo(b.sellingPrice));
           break;
         case 'Price Descending':
-          _filteredItems.sort((a, b) => double.parse(b.sellingPrice.substring(1)).compareTo(double.parse(a.sellingPrice.substring(1))));
+          _filteredItems.sort((a, b) => b.sellingPrice.compareTo(a.sellingPrice));
           break;
         case 'Most Urgent':
           _filteredItems.sort((a, b) => b.status.compareTo(a.status));
@@ -177,11 +179,11 @@ class _InventoryPageState extends State<InventoryPage> {
                     itemCount: _filteredItems.length,
                     itemBuilder: (context, index) {
                       final Product item = _filteredItems[index];
-                      final Color urgencyColor = switch (item.status) {
-                        "1" => const Color(0xFFF59E0B),
-                        "2" => const Color(0xFFE74C3C),
-                        _ => Colors.grey,
-                      };
+                        final Color urgencyColor = switch (item.status) {
+                          "out_of_stock" => const Color(0xFFE74C3C),
+                          "active" => const Color(0xFFF59E0B),
+                          _ => Colors.grey,
+                        };
                     
                       return Card.outlined(
                         clipBehavior: Clip.antiAlias,

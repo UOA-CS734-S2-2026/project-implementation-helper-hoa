@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 
 class ProductPage extends StatefulWidget {
-  final int itemID;
+  final String itemID;
   const ProductPage({super.key, required this.itemID});
 
   @override
@@ -49,9 +49,9 @@ class _ProductPageState extends State<ProductPage> {
                   Text('Selling Price: ${product.sellingPrice}'),
                   Text('Tax Rate: ${product.taxRate}'),
                   Text('Total Stock: ${product.totalStock}'),
-                  Text('Reorder Point: ${product.reOrderPoint}'),
+                  Text('Reorder Point: ${product.reorderPoint}'),
                   Text('Unit of Measure: ${product.unitOfMeasure}'),
-                  Text('Total Sales: ${product.totalSales}'),
+                  Text('Total Sales: ${product.totalSold}'),
                   Text('Sales Velocity: ${product.salesVelocity}'),
                   Text('Tags: ${product.tags.join(', ')}'),
                   Text('Status: ${product.status}'),
