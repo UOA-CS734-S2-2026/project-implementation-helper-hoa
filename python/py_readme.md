@@ -52,3 +52,6 @@ scanner additionally uses `LLAMA_CLOUD_API_KEY`. See
 
 The Python tier never reads `server/service-account.json` and never talks to
 Firestore — it goes through the Express API.
+
+## Server running
+In order to get details from db to utilize it. run *npm run dev* post server setup
