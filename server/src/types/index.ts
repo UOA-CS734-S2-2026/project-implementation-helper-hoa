@@ -15,7 +15,7 @@ export type ProductBatch = {
   batchNumber: string;
   quantity: number;
   costPrice: number;
-  expirationDate: Date;
+  expirationDate?: Date | null;
   receivedDate: Date;
   vendorId: string;
   invoiceNumber: string;
@@ -127,6 +127,35 @@ export type ConfirmResultItem = {
   productId: string;
   created: boolean;
   name: string;
+};
+
+// Ordered from most to least severe; the index is used as the sort rank.
+export const INVENTORY_ALERT_LEVELS = ['Urgent', 'Very low', 'Low', 'Expiring soon'] as const;
+export type InventoryAlertLevel = (typeof INVENTORY_ALERT_LEVELS)[number];
+
+export type InventoryAlertBatch = {
+  batchNumber: string;
+  quantity: number;
+  expirationDate: Date | null;
+  receivedDate: Date;
+  invoiceNumber: string;
+  vendor: VendorRecord | null;
+};
+
+export type InventoryAlert = {
+  productId: string;
+  name: string;
+  sku: string;
+  category: string;
+  unitOfMeasure: string;
+  level: InventoryAlertLevel;
+  reasons: string[];
+  totalStock: number;
+  reorderPoint: number;
+  sellingPrice: number;
+  nearestExpiry: Date | null;
+  daysToExpiry: number | null;
+  batches: InventoryAlertBatch[];
 };
 
 

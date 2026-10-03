@@ -8,6 +8,7 @@ import {
     NewBatch,
     InvoiceRecord,
     ConfirmedInvoice,
+    VendorRecord,
 } from '../types';
 import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice, toFirestoreConfirmedInvoice } from './mappers';
 import { HelperHoaStore } from '.';
@@ -53,6 +54,20 @@ export class FirebaseHoaStore implements HelperHoaStore {
   async user(id: string): Promise<User | undefined> {
     const doc = await db.collection('users').doc(id).get();
     return doc.exists ? toUser(doc) : undefined;
+  }
+
+  async vendors(): Promise<VendorRecord[]> {
+    const snapshot = await db.collection('vendors').get();
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name ?? '',
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        address: data.address ?? null,
+      };
+    });
   }
 
   async createProduct(product: NewProduct): Promise<ProductRecord> {

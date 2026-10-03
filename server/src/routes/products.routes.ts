@@ -24,6 +24,18 @@ export function createProductRoutes(service: InventoryService, store: HelperHoaS
       }
   });
 
+  // Must be registered before '/:id' so 'alerts' is not treated as a product id.
+  router.get('/alerts', 
+    requireAuth, 
+    requireRole(['admin', 'manager', 'cashier'], store), 
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+      try {
+        res.status(200).json(await service.getInventoryAlerts());
+      } catch (error) {
+        next(error);
+      }
+  });
+
   router.get('/:id', 
     requireAuth, 
     requireRole(['admin', 'manager', 'cashier'], store), 

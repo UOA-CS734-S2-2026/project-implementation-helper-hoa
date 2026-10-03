@@ -12,7 +12,7 @@ export function toProductBatch(data: any): ProductBatch {
     batchNumber: data.batchNumber,
     quantity: data.quantity,
     costPrice: data.costPrice,
-    expirationDate: data.expirationDate ? data.expirationDate.toDate() : new Date(), 
+    expirationDate: data.expirationDate ? data.expirationDate.toDate() : null,
     receivedDate: data.receivedDate ? data.receivedDate.toDate() : new Date(),
     vendorId: data.vendorId,
     invoiceNumber: data.invoiceNumber,

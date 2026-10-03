@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../theme_extensions.dart';
 
@@ -140,6 +141,32 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         const SizedBox(height: 28),
+        Material(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            leading: const Icon(
+              Icons.settings_outlined,
+              color: Color(0xFF4E6CD6),
+            ),
+            title: Text(
+              'Settings',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: context.primaryText,
+              ),
+            ),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: context.secondaryText,
+            ),
+            onTap: () => context.go('/settings'),
+          ),
+        ),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           height: 54,

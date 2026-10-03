@@ -2,10 +2,17 @@ import { HelperHoaStore } from '../store';
 import {
   ConfirmResultItem,
   ConfirmedInvoice,
+  INVENTORY_ALERT_LEVELS,
+  InventoryAlert,
+  InventoryAlertLevel,
   NewBatch,
   NewProduct,
   ProductRecord,
 } from '../types';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const EXPIRING_SOON_DAYS = 7;
+const URGENT_EXPIRY_DAYS = 2;
 
 
 export class InventoryService {
@@ -24,6 +31,95 @@ async getAllProducts(filters?: { activeOnly?: boolean; name?: string; category?:
       throw new Error(`Product with ID ${id} not found`); 
     }
     return product;
+  }
+
+  async getInventoryAlerts(): Promise<InventoryAlert[]> {
+    const [products, vendors] = await Promise.all([
+      this.store.products(),
+      this.store.vendors(),
+    ]);
+    const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
+    const now = Date.now();
+    const alerts: InventoryAlert[] = [];
+
+    for (const product of products) {
+      if (product.status === 'discontinued') {
+        continue;
+      }
+
+      const batches = product.batches.filter((batch) => batch.quantity > 0);
+      const totalStock = typeof product.totalStock === 'number'
+        ? product.totalStock
+        : batches.reduce((sum, batch) => sum + batch.quantity, 0);
+      const reorderPoint = product.reorderPoint || 0;
+
+      const expiries = batches
+        .map((batch) => batch.expirationDate)
+        .filter((date): date is Date => date instanceof Date)
+        .sort((a, b) => a.getTime() - b.getTime());
+      const nearestExpiry = expiries[0] ?? null;
+      const daysToExpiry = nearestExpiry
+        ? Math.ceil((nearestExpiry.getTime() - now) / DAY_MS)
+        : null;
+
+      const outOfStock = totalStock <= 0;
+      const veryLow = reorderPoint > 0 && totalStock <= reorderPoint * 0.5;
+      const low = reorderPoint > 0 && totalStock <= reorderPoint;
+      const expired = daysToExpiry !== null && daysToExpiry <= 0;
+      const expiringSoon = daysToExpiry !== null && daysToExpiry <= EXPIRING_SOON_DAYS;
+
+      const reasons: string[] = [];
+      if (outOfStock) reasons.push('Out of stock');
+      else if (veryLow) reasons.push(`Stock at or below 50% of reorder point (${reorderPoint})`);
+      else if (low) reasons.push(`Stock at or below reorder point (${reorderPoint})`);
+      if (expired) reasons.push('A batch has expired');
+      else if (expiringSoon) reasons.push(`Expires in ${daysToExpiry} day${daysToExpiry === 1 ? '' : 's'}`);
+
+      let level: InventoryAlertLevel | null = null;
+      if (outOfStock || expired || (daysToExpiry !== null && daysToExpiry <= URGENT_EXPIRY_DAYS) || (veryLow && expiringSoon)) {
+        level = 'Urgent';
+      } else if (veryLow) {
+        level = 'Very low';
+      } else if (low) {
+        level = 'Low';
+      } else if (expiringSoon) {
+        level = 'Expiring soon';
+      }
+
+      if (!level) {
+        continue;
+      }
+
+      alerts.push({
+        productId: product.id,
+        name: product.name,
+        sku: product.sku,
+        category: product.category,
+        unitOfMeasure: product.unitOfMeasure || 'each',
+        level,
+        reasons,
+        totalStock,
+        reorderPoint,
+        sellingPrice: product.sellingPrice,
+        nearestExpiry,
+        daysToExpiry,
+        batches: batches.map((batch) => ({
+          batchNumber: batch.batchNumber,
+          quantity: batch.quantity,
+          expirationDate: batch.expirationDate ?? null,
+          receivedDate: batch.receivedDate,
+          invoiceNumber: batch.invoiceNumber,
+          vendor: vendorById.get(batch.vendorId) ?? null,
+        })),
+      });
+    }
+
+    const rank = (level: InventoryAlertLevel) => INVENTORY_ALERT_LEVELS.indexOf(level);
+    return alerts.sort((a, b) =>
+      rank(a.level) - rank(b.level) ||
+      (a.daysToExpiry ?? Infinity) - (b.daysToExpiry ?? Infinity) ||
+      a.totalStock - b.totalStock,
+    );
   }
 
   async confirmInvoice(invoice: ConfirmedInvoice): Promise<ConfirmResultItem[]> {
