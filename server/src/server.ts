@@ -27,6 +27,23 @@ import { createPushRoutes } from './routes/push.routes';
 const app = express();
 const port = Number(Number(process.env.PORT)) || 3000;
 
+// Node treats an unhandled rejection as fatal by default, so a single stray
+// promise in any background path would take the whole service down and fail the
+// deploy. Route handlers are already covered -- Express 5 forwards async
+// rejections to globalErrorHandler -- so this only catches the rest: timers,
+// the Firestore listener, and anything a callback forgets to await.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
+// An uncaught exception can leave state inconsistent, so exit and let the
+// platform restart cleanly rather than serving from a damaged process. This is
+// safer than swallowing it, and Render restarts on a non-zero exit.
+process.on('uncaughtException', (error) => {
+  console.error('[uncaughtException]', error);
+  process.exit(1);
+});
+
 const store = new FirebaseHoaStore();
 const inventoryService = new InventoryService(store);
 const invoiceService = new InvoiceService(store);
