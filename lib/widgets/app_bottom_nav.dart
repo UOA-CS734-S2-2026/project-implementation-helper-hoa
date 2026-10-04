@@ -12,7 +12,7 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blue = const Color(0xFF4E6CD6);
+    const blue = Color(0xFF24428F);
     final yellow = const Color(0xFFFFDF58);
 
     return Container(

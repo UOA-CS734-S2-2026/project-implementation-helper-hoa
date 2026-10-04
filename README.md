@@ -141,6 +141,24 @@ The app resolves its backend host per platform (`lib/config/api_config.dart`):
 `10.0.2.2` on the Android emulator, `localhost` on web, desktop, and the iOS
 simulator. On a physical device, point it at your machine's LAN address.
 
+## Testing
+
+The fast suites are deterministic and do not require Firebase or a running API:
+
+```sh
+flutter test
+(cd server && npm test)
+(cd web-admin && npm test)
+(cd python && python -m unittest discover -s tests)
+```
+
+Flutter widget tests also check mobile tap targets, text contrast, and accessible
+labels. Run Flutter analysis, backend type checking, and the admin lint/build
+checks with `flutter analyze`, `cd server && npm run typecheck`, and
+`cd web-admin && npm run lint && npm run build`, respectively. Device-level
+journeys involving native permissions or camera access require a configured
+emulator/device and are kept separate from the fast test suites.
+
 ## Documentation
 
 ### Android inventory push notifications (FCM)
