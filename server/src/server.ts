@@ -49,11 +49,12 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173,ht
 // The Flutter web dev server falls back to a random port when its preferred one
 // is taken, so the browser origin is not stable during development and a fixed
 // list rejects it. Match any loopback port, as python/chatbot_server.py does.
-const loopbackOrigin = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const loopbackOrigin = /^http(s)?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const cloudRunOrigin = /^https:\/\/.*\.run\.app$/;
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || loopbackOrigin.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || loopbackOrigin.test(origin) || cloudRunOrigin.test(origin)) {
       callback(null, true);
       return;
     }

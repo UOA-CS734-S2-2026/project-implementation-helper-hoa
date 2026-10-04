@@ -1,4 +1,4 @@
 export const aiConfig = {
   pythonBaseUrl:
-     'http://localhost:8000',
+      process.env.PYTHON_AI_URL || 'http://localhost:8000',
 };

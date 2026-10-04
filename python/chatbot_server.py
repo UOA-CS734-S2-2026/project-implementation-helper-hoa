@@ -45,7 +45,7 @@ app = FastAPI(title="HelperHoa Chatbot")
 # random port when 8080 is taken, so the origin is not stable during development.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"http(s)?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.run\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -132,7 +132,15 @@ async def chat(request: ChatRequest, authorization: str | None = Header(default=
             detail=f"MCP tools unavailable: {exc}",
         ) from exc
 
-    agent = create_agent(get_llm(), tools, system_prompt=SYSTEM_PROMPT)
+    try:
+        llm = get_llm()
+    except Exception as exc:
+        detail = str(exc)
+        if "not set" in detail or "UOA_API_KEY" in detail:
+            raise HTTPException(status_code=503, detail="LLM not configured") from exc
+        raise HTTPException(status_code=500, detail=f"Agent failed: {exc}") from exc
+
+    agent = create_agent(llm, tools, system_prompt=SYSTEM_PROMPT)
 
     messages: list[tuple[str, str]] = [
         (m.role, m.content) for m in request.history
@@ -143,6 +151,9 @@ async def chat(request: ChatRequest, authorization: str | None = Header(default=
         result = await agent.ainvoke({"messages": messages})
         reply = str(result["messages"][-1].content).strip()
     except Exception as exc:
+        detail = str(exc)
+        if "not set" in detail or "UOA_API_KEY" in detail or "LLAMA_CLOUD_API_KEY" in detail:
+            raise HTTPException(status_code=503, detail="LLM not configured") from exc
         raise HTTPException(status_code=500, detail=f"Agent failed: {exc}") from exc
 
     return ChatResponse(reply=reply)
@@ -168,6 +179,12 @@ async def scan_invoice(
         )
     except Exception as exc:
         print(f"Scan failed: {exc}")
+        detail = str(exc)
+        if "not set" in detail or "LLAMA_CLOUD_API_KEY" in detail or "UOA_API_KEY" in detail:
+            raise HTTPException(
+                status_code=503,
+                detail="LLM not configured",
+            ) from exc
         raise HTTPException(
             status_code=502,
             detail=f"Invoice extraction failed: {exc}",
@@ -175,5 +192,5 @@ async def scan_invoice(
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PYTHON_AI_PORT", "8000"))
-    uvicorn.run(app, host="localhost", port=port)
+    port = int(os.getenv("PORT") or os.getenv("PYTHON_AI_PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
