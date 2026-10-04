@@ -1,0 +1,37 @@
+# One-click deploy to Render (https://render.com).
+#
+# Free plan needs no credit card. Be aware of its two limits: the service spins
+# down after 15 minutes without inbound traffic (first request then takes about
+# a minute to wake), and 750 free instance-hours are shared across the
+# workspace per month.
+#
+# The free plan gives 512 MB RAM, which fits the Express tier but not the Python
+# tier: langchain + langgraph + fastmcp needs roughly 2-3 GB. Python is therefore
+# not defined here.
+services:
+  - type: web
+    name: helperhoa-server
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free
+    region: oregon
+    # Mounted from the dashboard (Secret Files), never baked into the image.
+    healthCheckPath: /api/ai/health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: NODE_ENV
+        value: production
+      # firebase.ts reads this path first, before any local file or ADC lookup.
+      # Add the matching Secret File in the dashboard, named service-account.json.
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/service-account.json
+      # Only the seed scripts and token minting use this; the running server
+      # does not need it. Set it in the dashboard if you plan to seed.
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      # Leave empty until the Python tier exists somewhere; ai.service.ts reports
+      # "AI service is unreachable" rather than crashing when this is unset.
+      - key: PYTHON_AI_URL
+        sync: false

@@ -1,76 +1,92 @@
-# Cloud Run Hosting Guide
+# Hosting Guide
 
-## Prerequisites
-- Google Cloud account with billing enabled (free tier available)
-- gcloud CLI installed and authenticated (`gcloud auth login`)
-- Docker installed locally (for building images)
+The Express tier (`server/`) is the only part that is deployed here. It covers
+authentication, products, inventory, invoices, alerts, and the admin API.
 
-## 1) Create GCP project
-Create or select a project. Note: Firebase client (Android) and Admin SDK can be different projects; this guide uses your own Firebase project.
+## Why only the Express tier
 
-## 2) Enable APIs
-Enable required APIs:
-- Cloud Run API
-- Artifact Registry API
-- Firestore API
-- Identity and Access Management (IAM) API
+The Python tier (`python/chatbot_server.py`) is not deployed, for two reasons:
 
-## 3) Firebase setup (faculty create their own)
-- Create a Firebase project (or reuse). The Android app uses `helper-hoa-sc` as client ID in google-services.json; for a hosted deployment, create your own Firebase project and update `android/app/google-services.json` if needed.
-- Enable Firestore and Authentication.
-- Download a Service Account key (Project Settings > Service Accounts > Generate new private key). Keep this file secure; do NOT commit it. For Cloud Run, prefer Application Default Credentials with an attached service account instead of baking this key into images.
-- Grant the Cloud Run service account `roles/datastore.user` (and any other needed roles).
+- **Memory.** It needs roughly 2-3 GB for langchain, langgraph, fastmcp and
+  llama-cloud. Render's free plan caps a service at 512 MB / 0.1 CPU.
+- **Missing keys.** `UOA_API_KEY` and `LLAMA_CLOUD_API_KEY` are unset, so
+  `/chat` and `/scan/invoice` would return HTTP 503 "LLM not configured"
+  regardless of where they run.
 
-## 4) Store secrets in Secret Manager (recommended)
-Create secrets for API keys:
-- `uoa-api-key`
-- `llama-cloud-api-key`
-- `mcp-secret` (shared secret between Python and Express tiers)
-- `firebase-web-api-key`
+The service returns that 503 deliberately rather than crashing on start, so the
+tier stays deployable once someone supplies a key.
 
-## 5) Build and push images to Artifact Registry
-Create a Docker repository in Artifact Registry (e.g., `us-central1-docker.pkg.dev/<PROJECT_ID>/helperhoa`).
+---
 
-Build and push server:
+## Option A: Render (recommended, no credit card)
+
+### Prerequisites
+- A Render account (free tier, no card required)
+- Docker installed locally
+- **Your own Firebase project** with Firestore and Authentication enabled. Do not
+  reuse this repository's working project; faculty should each supply their own.
+
+### Deploy
+1. Push this branch and open the repo in Render: **New > Blueprint**.
+2. Render detects `render.yaml` at the repo root.
+3. Render prompts for the two `sync: false` values. Leave `PYTHON_AI_URL` empty
+   until a Python tier exists.
+4. Add the Firebase credential as a **Secret File** (not an env var):
+   Dashboard > Environment > Secret Files > Add, filename `service-account.json`,
+   paste the JSON downloaded from Firebase console > Project settings >
+   Service accounts.
+
+`render.yaml` sets `GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/service-account.json`,
+which is the first thing `server/src/config/firebase.ts` checks. The key is
+never baked into the image: `server/.dockerignore` excludes
+`service-account.json`, so `COPY . .` cannot capture it.
+
+### Verify
 ```bash
-gcloud builds submit --tag us-central1-docker.pkg.dev/<PROJECT_ID>/helperhoa/server:latest ./server
+curl -i https://<your-service>.onrender.com/products
 ```
+Expect **401 Unauthorized**. That proves the server is up, the Firestore client
+initialised, and auth middleware is live. A 500 here instead means the service
+account could not be read.
 
-Build and push Python:
-```bash
-gcloud builds submit --tag us-central1-docker.pkg.dev/<PROJECT_ID>/helperhoa/python:latest ./python
-```
+### Free-tier limits to expect
+- Spins down after 15 minutes without inbound traffic; the first request after
+  that takes roughly a minute to wake.
+- 750 instance-hours per month shared across the workspace.
+- 512 MB RAM, 0.1 CPU.
 
-## 6) Deploy Python service
-```bash
-gcloud run deploy helperhoa-python \
-  --image us-central1-docker.pkg.dev/<PROJECT_ID>/helperhoa/python:latest \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --cpu 1 --memory 2Gi \
-  --min-instances 0 --max-instances 1 \
-  --set-secrets UOA_API_KEY=uoa-api-key:latest,LLAMA_CLOUD_API_KEY=llama-cloud-api-key:latest,MCP_SECRET=mcp-secret:latest,MCP_API_BASE_URL=mcp-api-base-url:latest
-```
-Note: MCP_API_BASE_URL should point to the Express service URL (e.g., https://helperhoa-server-<hash>-<region>.run.app). Set after deploying Express, or update the service.
+CORS accepts `https://*.onrender.com` so the Flutter web build can call the API.
 
-## 7) Deploy Express service
+---
+
+## Option B: Google Cloud Run (needs a billing account)
+
+Requires a card. Keep this for when one is available; the Dockerfiles are
+provider-neutral.
+
+### Deploy the server
 ```bash
+gcloud builds submit --tag <registry>/server:latest ./server
 gcloud run deploy helperhoa-server \
-  --image us-central1-docker.pkg.dev/<PROJECT_ID>/helperhoa/server:latest \
+  --image <registry>/server:latest \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars FIREBASE_WEB_API_KEY=<your-key>,PYTHON_AI_URL=<python-service-url> \
-  --set-secrets MCP_SECRET=mcp-secret:latest \
-  --service-account <cloud-run-sa>@<PROJECT_ID>.iam.gserviceaccount.com
+  --service-account <sa>@<PROJECT_ID>.iam.gserviceaccount.com
 ```
-Attach a service account with `roles/datastore.user`. The server uses Application Default Credentials; do not mount service-account.json.
 
-## 8) Update environment references
-After both services are deployed, update:
-- Python service: set `MCP_API_BASE_URL` to the Express URL
-- Express service: set `PYTHON_AI_URL` to the Python URL
+Attach a service account holding `roles/datastore.user`; `firebase.ts` falls back
+to Application Default Credentials when no key file is present, so no
+`service-account.json` is needed in the image.
+
+The Python tier, if ever deployed, needs `--cpu 1 --memory 2Gi` and
+`--min-instances 0 --max-instances 1`.
+
+---
 
 ## Notes
-- The Python service returns HTTP 503 "LLM not configured" if required API keys are missing.
-- CORS allows `https://*.run.app` and loopback origins for local development.
-- Never commit secrets or service-account.json. The .gitignore already excludes them.
+- Secrets are supplied by whoever deploys, through the provider's dashboard. No
+  credential is committed to this repository.
+- `MCP_SECRET` is only needed once the Python tier is running.
+- The Flutter app still points at `10.0.2.2` (emulator) or `localhost` by
+  default. Override with `--dart-define` when pointing a build at a deployed
+  backend.
