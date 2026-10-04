@@ -24,11 +24,15 @@ Helper Hoa is three tiers that each own their own configuration:
 | Tier | Lives in | Port | Responsibility |
 |---|---|---|---|
 | Flutter app | `lib/` | — | UI for store staff, talks to both servers over HTTP |
-| Express API | `server/` | 3000 | Auth, inventory, invoices, persistence to Firestore. Also hosts the MCP endpoint |
-| Python AI | `python/` | 8000 | FastAPI chat server + MCP chatbot, calls the Express API |
+| Express API | `server/` | 3000 | Auth, inventory, invoices, persistence to Firestore. Push notification sender |
+| Python AI | `python/` | 8000 | FastAPI chat server + MCP server, calls the Express API |
+| React admin panel | `web-admin/` | 5173 | Back-office desktop client (barcode scanner). Local dev tool — see below |
 
 The app talks to both servers. The Python tier never touches Firestore itself — it
 calls the Express API over HTTP, so all writes go through one place.
+
+> The **full architecture**, with diagrams and the reasoning behind each design
+> decision, is in **[architecture.md](architecture.md)**.
 
 ## Getting started
 
@@ -231,8 +235,22 @@ and device battery policies; high priority is requested but immediate delivery
 is not guaranteed. Android force-stop blocks delivery until the app is opened.
 This repository has no iOS target, so iPhone/APNs and web push are not enabled.
 
-| Document | Covers |
-|---|---|
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Every screen in the app, for store staff |
-| [python/py_readme.md](python/py_readme.md) | Python tier specifics: venv, the two processes, the chatbot |
-| [server/src/server-logic.md](server/src/server-logic.md) | How the Express server is put together internally |
+### Documentation map
+
+Every topic, where it is explained, and the code that implements it.
+
+| Looking for | Read | Implemented in |
+|---|---|---|
+| **System architecture**, tiers, data model, request flows, and *why* each decision was made | [architecture.md](architecture.md) | — |
+| How the Express server is layered internally | [server/src/server-logic.md](server/src/server-logic.md) | `server/src/` |
+| Python tier: venv, the two processes, chatbot, the 14 MCP tools | [python/py_readme.md](python/py_readme.md) | `python/` |
+| Every app screen, written for store staff | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | `lib/features/` |
+| **Deploying** to Render, environment config, Firebase project setup | [docs/HOSTING.md](docs/HOSTING.md) | `render.yaml`, `server/Dockerfile` |
+| **Testing the running system**, live API + device walkthrough | [live_testing.md](live_testing.md) | — |
+| **Web admin panel**: how the dev server authenticates it, what it can reach | [architecture.md §4](architecture.md#4-how-the-web-client-shapes-the-backend) | `web-admin/vite.config.ts` |
+| **Roles and token handling**: mobile sign-in vs the browser cookie session | [architecture.md §10](architecture.md#10-identity-roles-and-tokens) | `server/src/middlewares/auth.ts` |
+| **Push notifications**: registration, trigger, dedupe, setup, verification | [README — FCM setup](#android-inventory-push-notifications-fcm) · [architecture.md §11](architecture.md#11-notifications) | `server/src/services/push-notification.service.ts` |
+| **Camera**: invoice capture and barcode scanning, and the rejected OCR path | [architecture.md §16](architecture.md#16-mobile-and-device-capabilities) | `lib/features/snap_page.dart`, `web-admin/src/ScannerDialog.tsx` |
+| **Backend security**: auth, authorisation, secrets, CORS, known gaps | [architecture.md §12](architecture.md#12-security) | `server/src/server.ts`, `server/src/config/` |
+| **Invoice approval**: the three-tier scan → edit → approve flow | [architecture.md §7.4](architecture.md#74-invoice-approval-the-three-tier-flow) | `lib/features/invoice_review_page.dart` |
+| **Known limitations** (undeployed Python tier, panel not deployable, mobile Sell screen) | [architecture.md §19](architecture.md#19-known-limitations) | — |
