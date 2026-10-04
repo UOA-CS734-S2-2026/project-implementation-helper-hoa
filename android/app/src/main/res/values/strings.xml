@@ -1,0 +1,4 @@
+<resources>
+    <string name="inventory_alert_channel_name">Inventory alerts</string>
+    <string name="inventory_alert_channel_description">Low stock and expiring products</string>
+</resources>

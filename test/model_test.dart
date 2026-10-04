@@ -35,7 +35,71 @@ void main() {
       expect(item.quantity, 0);
       expect(item.unit, '');
       expect(item.costPrice, 0);
-      expect(item.expiryDate, '');
+      expect(item.expiryDate, isNull);
+    });
+
+    test('omits nullable fields when serializing and can clear them', () {
+      const item = InvoiceItem(
+        lineNumber: 1,
+        name: 'Tea',
+        quantity: 2,
+        unit: 'boxes',
+        costPrice: 4,
+        expiryDate: '2026-12-01',
+        sellingPrice: 6,
+      );
+
+      final updated = item.copyWith(clearExpiry: true, clearSellingPrice: true);
+
+      expect(updated.expiryDate, isNull);
+      expect(updated.sellingPrice, isNull);
+      expect(updated.toJson(), {
+        'lineNumber': 1,
+        'name': 'Tea',
+        'quantity': 2.0,
+        'unit': 'boxes',
+        'costPrice': 4.0,
+      });
+    });
+  });
+
+  group('InvoiceReview.fromScan', () {
+    test('normalizes invoice fields and ignores malformed line items', () {
+      final invoice = InvoiceReview.fromScan({
+        'vendor': {'name': '  Fresh Supply  '},
+        'invoice_number': ' INV-42 ',
+        'invoice_date': ' 2026-09-27 ',
+        'line_items': [
+          {
+            'product_name': ' Coffee beans ',
+            'quantity': 12,
+            'unit_price': 8.5,
+          },
+          null,
+          'not a line item',
+        ],
+      });
+
+      expect(invoice.supplierName, 'Fresh Supply');
+      expect(invoice.invoiceNumber, 'INV-42');
+      expect(invoice.receivedDate, '2026-09-27');
+      expect(invoice.items, hasLength(1));
+      expect(invoice.items.single.name, 'Coffee beans');
+      expect(invoice.items.single.quantity, 12);
+      expect(invoice.items.single.costPrice, 8.5);
+      expect(invoice.items.single.unit, 'each');
+    });
+
+    test('returns empty defaults for absent or invalid collections', () {
+      final invoice = InvoiceReview.fromScan({
+        'vendor': 'not an object',
+        'line_items': 'not a list',
+      });
+
+      expect(invoice.supplierName, isEmpty);
+      expect(invoice.invoiceNumber, isEmpty);
+      expect(invoice.receivedDate, isEmpty);
+      expect(invoice.items, isEmpty);
     });
   });
 
@@ -58,5 +122,16 @@ void main() {
     expect(alert.daysUntilExpiry, 5);
     expect(alert.vendorName, 'Fresh Supply');
     expect(alert.reasons, ['low_stock', 'expiring_soon']);
+  });
+
+  test('InventoryAlert uses safe defaults when fields are absent', () {
+    final alert = InventoryAlert.fromJson({});
+
+    expect(alert.productName, 'Unknown product');
+    expect(alert.vendorName, isNull);
+    expect(alert.nearestExpiryDate, isNull);
+    expect(alert.daysUntilExpiry, isNull);
+    expect(alert.severity, 'low');
+    expect(alert.reasons, isEmpty);
   });
 }
