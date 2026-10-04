@@ -1,19 +1,26 @@
-# CS734 project - Team Helper Hoa
+<p align="center">
+  <img src="assets/logo.png" alt="Helper Hoa logo" width="250">
+</p>
 
-Welcome to the project for COMPSCI 734 - Mobile, Web & Enterprise Computing. We look forward to seeing the amazing things you create this semester! This is your team's repository.
+<p align="center">
+  Helper Hoa is a mobile-first inventory and invoice assistant for small store staff, built for <strong>COMPSCI 734 – Mobile, Web & Enterprise Computing</strong> (Semester 2, 2026).
+</p>
 
-Your team members are:
+## Key features
+
+- **Inventory management:** track products and batches, with role-based access for admin, manager, and cashier accounts.
+- **Invoice capture and approval:** scan an invoice, edit the extracted details, and approve it through a three-step review flow.
+- **Barcode scanning:** use the camera in the Flutter app or the web admin panel.
+- **Push notifications:** Android alerts for low stock, very low stock, and expiring or expired batches, even when the app is closed.
+- **AI chat assistant:** a chatbot that answers store questions through MCP tools backed by the same API.
+
+## Team
+
 - Nikithaa Ashwin (nsha312)
 - Justin Averell (cdav583)
 - Sudip Chowdhury (scho669)
 - Renier Lategan (rlat953)
 - Sri Gokul Prazath Sreedharen (gsri145)
-
-You have complete control over how you run this repo. All your members will have admin access. The only thing setup by default is branch protections on `main`, requiring a PR with at least one code reviewer to modify `main` rather than direct pushes.
-
-Please use good version control practices, such as feature branching, both to make it easier for markers to see your group's history and to lower the chances of you tripping over each other during development
-
-![Team image](./team-image.jpg)
 
 ---
 
