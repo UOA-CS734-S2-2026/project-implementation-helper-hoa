@@ -15,6 +15,14 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 class ApiConfig {
   const ApiConfig._();
 
+  /// Overrides supplied at build time, so a deployed backend URL does not have
+  /// to be committed. Both are empty unless `--dart-define` is passed, which
+  /// keeps the loopback defaults below for local development:
+  ///
+  ///   flutter run --dart-define=EXPRESS_BASE_URL=https://<service>.onrender.com
+  static const _expressBaseUrlOverride = String.fromEnvironment('EXPRESS_BASE_URL');
+  static const _pythonBaseUrlOverride = String.fromEnvironment('PYTHON_BASE_URL');
+
   static String get host {
     if (kIsWeb) {
       return 'localhost';
@@ -27,8 +35,11 @@ class ApiConfig {
   }
 
   /// Express server (`server/`), which fronts the chatbot and persists invoices.
-  static String get expressBaseUrl => 'http://$host:3000';
+  static String get expressBaseUrl =>
+      _expressBaseUrlOverride.isNotEmpty ? _expressBaseUrlOverride : 'http://$host:3000';
 
-  /// Python FastAPI server (`python/chatbot_server.py`).
-  static String get pythonBaseUrl => 'http://$host:8000';
+  /// Python FastAPI server (`python/chatbot_server.py`). Not deployed on Render,
+  /// so this stays on loopback unless a build override points somewhere else.
+  static String get pythonBaseUrl =>
+      _pythonBaseUrlOverride.isNotEmpty ? _pythonBaseUrlOverride : 'http://$host:8000';
 }

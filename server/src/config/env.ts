@@ -38,8 +38,12 @@ export function requireEnv(name: string): string {
 
   if (!value) {
     throw new Error(
-      `${name} is not set. Add it to ${serverEnvPath} (or ${rootEnvPath} for ` +
-        'variables shared with the Python tier), or export it in the environment.',
+      `${name} is not set, so the server cannot start. ` +
+        `Locally, add it to ${serverEnvPath} (or ${rootEnvPath} for variables shared ` +
+        'with the Python tier), or export it in the environment. ' +
+        'On Render, set it under Environment > Environment Variables. ' +
+        `The value comes from Firebase console > Project settings > General > ` +
+        'Web API Key, and must belong to the same project as your service account.',
     );
   }
 
