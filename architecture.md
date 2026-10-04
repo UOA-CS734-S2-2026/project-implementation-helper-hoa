@@ -219,6 +219,8 @@ The app **never handles a password** — Firebase verifies it and returns a toke
 
 Sales are recorded inside a **Firestore transaction** — stock is decremented and the sale document is written together, so two simultaneous sales cannot both succeed against the same units.
 
+The web client is used for sales and stock updates. A recorded sale reduces that product's stock; once it reaches the reorder point the product is flagged on the dashboard and in the product list, and staff are notified until the item is restocked.
+
 There are two entry points, with deliberately different reach:
 
 | Endpoint | Client | Roles |

@@ -26,10 +26,14 @@ Helper Hoa is three tiers that each own their own configuration:
 | Flutter app | `lib/` | — | UI for store staff, talks to both servers over HTTP |
 | Express API | `server/` | 3000 | Auth, inventory, invoices, persistence to Firestore. Push notification sender |
 | Python AI | `python/` | 8000 | FastAPI chat server + MCP server, calls the Express API |
-| React admin panel | `web-admin/` | 5173 | Back-office desktop client (barcode scanner). Local dev tool — see below |
+| React admin panel | `web-admin/` | 5173 | Back-office web client. Used for barcode scanning, recording sales, and stock updates. Local dev tool — see below |
 
 The app talks to both servers. The Python tier never touches Firestore itself — it
 calls the Express API over HTTP, so all writes go through one place.
+
+The web client is used for sales and stock updates. Recording a sale reduces that
+product's stock. Once stock reaches the product's reorder point it is flagged on the
+dashboard and in the product list, and staff are notified until the item is restocked.
 
 > The **full architecture**, with diagrams and the reasoning behind each design
 > decision, is in **[architecture.md](architecture.md)**.
