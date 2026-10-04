@@ -1,1 +1,13 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"helper-hoa-sc","appId":"1:333387564682:android:38ce2309264329ca138f73","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"helper-hoa-sc","configurations":{"android":"1:333387564682:android:38ce2309264329ca138f73","web":"1:333387564682:web:b57d277ef62fc99b138f73","windows":"1:333387564682:web:08a425b7a2c071ce138f73"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "helperhoa-5f706",
+          "appId": "1:811818403641:android:f94535cbb5575cfc118ae8",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  }
+}

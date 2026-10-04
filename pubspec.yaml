@@ -20,6 +20,8 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.2.3
   flutter_dotenv: ^5.2.1
+  firebase_core: ^4.1.0
+  firebase_messaging: ^16.0.0
 
 dev_dependencies:
   flutter_test:

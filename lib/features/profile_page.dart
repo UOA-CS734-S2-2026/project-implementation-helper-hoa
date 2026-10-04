@@ -78,7 +78,16 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _signOut() async {
-    await AuthController.instance.signOut();
+    try {
+      await AuthController.instance.signOut();
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text('Could not disable push notifications and sign out: $error'),
+        ));
+      }
+    }
   }
 
   @override
@@ -213,7 +222,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const SizedBox(height: 26),
-
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -281,7 +289,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 18),
-
                 const Text(
                   'Password',
                   style: TextStyle(
@@ -339,7 +346,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 12),
-
                 if (_errorMessage != null) ...[
                   Text(
                     _errorMessage!,
@@ -351,7 +357,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 10),
                 ],
-
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -366,7 +371,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -375,8 +379,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4E6CD6),
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF4E6CD6)
-                          .withValues(alpha: 0.6),
+                      disabledBackgroundColor:
+                          const Color(0xFF4E6CD6).withValues(alpha: 0.6),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -403,9 +407,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
-
           const SizedBox(height: 22),
-
           Row(
             children: [
               const Expanded(child: Divider()),
@@ -423,7 +425,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 18),
-
           _socialLoginButton(
             context: context,
             icon: Icons.mail_outline_rounded,
@@ -433,7 +434,6 @@ class _ProfilePageState extends State<ProfilePage> {
             textColor: const Color(0xFF111111),
           ),
           const SizedBox(height: 12),
-
           _socialLoginButton(
             context: context,
             icon: Icons.apple_rounded,
@@ -442,9 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
             iconColor: Colors.white,
             textColor: Colors.white,
           ),
-
           const SizedBox(height: 24),
-
           Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -68,8 +68,9 @@ and place the downloaded `service-account.json` in `server/`.
 `server/src/config/firebase.ts` reads it from there, by a path resolved relative
 to that file, so it is found no matter which directory you run a command from.
 
-The project id comes from the service account itself, so there is no project id
-to configure. For this repo it is `helperhoa-cef06`.
+The project id comes from the service account itself. The configured Android
+app and current backend use `helperhoa-5f706`; both must use the same project
+for FCM delivery.
 
 Both `service-account.json` and the `.env` files are git-ignored. The committed
 `.env.example` files are the templates.
@@ -141,6 +142,76 @@ The app resolves its backend host per platform (`lib/config/api_config.dart`):
 simulator. On a physical device, point it at your machine's LAN address.
 
 ## Documentation
+
+### Android inventory push notifications (FCM)
+
+All signed-in staff (admins, managers, and cashiers) receive stock and expiry
+notifications. The Express API observes Firestore product changes and also scans
+every minute so expiry alerts arrive even when no inventory is edited and the
+phone app is closed. It uses the same rules as the Home inventory alerts:
+
+- Low stock: at or below the product's positive reorder point.
+- Very low stock: at or below 50% of the reorder point; zero stock is urgent.
+- Expiring soon: a positive-quantity batch expires within seven days.
+- Urgent expiry: within two days, or already expired.
+- Discontinued products and depleted batches do not generate expiry alerts.
+
+Delivery history is persisted per phone in the server-only `pushDevices`
+Firestore collection. A phone receives currently active alerts on registration,
+then only on a stock/expiry threshold transition or a change in the nearest
+expiring batch date. Resolving and later re-entering an alert condition generates
+a new notification. Quantity changes within the same threshold do not spam
+staff. Failed sends retry on the next scan; uninstalled/invalid tokens are
+removed. A crash between FCM acceptance and saving delivery history can cause a
+duplicate (at-least-once delivery).
+
+**Setup**
+
+1. In Firebase Console, use project `helperhoa-5f706`. The Android registration
+   must have package `com.example.project_implementation_helper_hoa`. Its
+   downloaded config lives at `android/app/google-services.json`. This is a
+   client config, **not** the private `server/service-account.json`; never put
+   the service-account key in the Flutter assets or Android app.
+2. Enable the **Firebase Cloud Messaging API (V1)** in that project. The backend
+   service account needs permission to send FCM messages (for example Firebase
+   Cloud Messaging API Admin), in addition to its existing Firestore access.
+3. Keep `pushDevices` inaccessible to direct client Firestore reads/writes.
+   Registration and removal go through authenticated API endpoints; the Admin
+   SDK bypasses Firestore client rules. This app does not need direct Firestore
+   access.
+4. Fully rebuild and reinstall the Android app after adding plugins or replacing
+   the Firebase config (`flutter run`; hot reload is not enough). Use a physical
+   Android phone or an emulator with Google Play services. Point the app's API
+   configuration at a backend it can reach.
+5. Sign in and grant notification permission. **Settings > Push notifications**
+   displays registration errors/permission status and persists the on/off choice.
+   Turning it off or signing out unregisters the phone and invalidates its FCM
+   token; signing in again registers a fresh token. Foreground alerts appear as
+   an in-app banner; tapping a system notification opens Home inventory alerts.
+
+**Keep the sender running:** run one always-on Express API process, or dedicate
+one API instance to this sender. Do not horizontally scale the current embedded
+worker: delivery history is persistent, but multiple workers can send the same
+alert concurrently. If the laptop/server sleeps or the API stops, new alerts
+cannot be detected until it resumes. There is no phone-side polling requirement
+and no Cloud Functions deployment in this implementation.
+
+**Phone verification**
+
+1. Sign in, allow notifications, and check Settings says alerts are enabled.
+2. Background the app or swipe it out of Recents (do **not** force-stop it).
+3. Sell stock so it crosses the reorder point; expect a notification after the
+   Firestore update. Further sales within the same threshold should not resend.
+4. Set an in-stock batch expiry within seven days; expect an expiry notification.
+   An expiry threshold reached solely by the passage of time is detected within
+   a minute while the server is running.
+5. Tap the notification to open Home, then test sign-out and the Settings toggle.
+6. Restart the API and confirm unchanged alerts are not resent.
+
+FCM/system delivery depends on connectivity, permission, Google Play services,
+and device battery policies; high priority is requested but immediate delivery
+is not guaranteed. Android force-stop blocks delivery until the app is opened.
+This repository has no iOS target, so iPhone/APNs and web push are not enabled.
 
 | Document | Covers |
 |---|---|

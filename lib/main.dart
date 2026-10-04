@@ -14,6 +14,7 @@ import 'features/snap_page.dart';
 import 'features/stock_page.dart';
 import 'models/invoice_review.dart';
 import 'services/auth_service.dart';
+import 'services/push_notification_service.dart';
 import 'theme_controller.dart';
 import 'features/inventory_page.dart';
 
@@ -41,6 +42,7 @@ class HelperHoaApp extends StatefulWidget {
 
 class _HelperHoaAppState extends State<HelperHoaApp> {
   late final GoRouter _router;
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -80,7 +82,6 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
               path: '/snap',
               builder: (context, state) => const SnapPage(),
             ),
-            
             GoRoute(
               path: '/sell',
               builder: (context, state) => const SellPage(),
@@ -123,6 +124,29 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
         ),
       ],
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PushNotificationService.instance.initialize(
+        onForeground: (message) {
+          if (!mounted || message.data['type'] != 'inventory_alert') return;
+          final notification = message.notification;
+          _messengerKey.currentState?.showSnackBar(SnackBar(
+            content: Text(
+              '${notification?.title ?? 'Inventory alert'}\n'
+              '${notification?.body ?? ''}',
+            ),
+            action: SnackBarAction(
+              label: 'View',
+              onPressed: () => _router.go('/'),
+            ),
+          ));
+        },
+        onOpened: (message) {
+          if (mounted && message.data['type'] == 'inventory_alert') {
+            _router.go('/');
+          }
+        },
+      );
+    });
   }
 
   @override
@@ -131,6 +155,7 @@ class _HelperHoaAppState extends State<HelperHoaApp> {
       valueListenable: ThemeController.mode,
       builder: (context, themeMode, _) {
         return MaterialApp.router(
+          scaffoldMessengerKey: _messengerKey,
           title: 'Helper Hoa',
           debugShowCheckedModeBanner: false,
           routerConfig: _router,
