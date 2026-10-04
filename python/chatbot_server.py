@@ -43,9 +43,11 @@ app = FastAPI(title="HelperHoa Chatbot")
 #
 # A regex rather than a fixed origin: the Flutter web dev server falls back to a
 # random port when 8080 is taken, so the origin is not stable during development.
+# No $ anchor is needed on the alternation: Starlette matches this with
+# fullmatch(), which anchors implicitly, so "onrender.com.evil.com" is rejected.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http(s)?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.run\.app",
+    allow_origin_regex=r"http(s)?://(localhost|127\.0\.0\.1)(:\d+)?|https://([a-z0-9-]+\.)*(run\.app|onrender\.com)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

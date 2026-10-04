@@ -50,11 +50,15 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173,ht
 // is taken, so the browser origin is not stable during development and a fixed
 // list rejects it. Match any loopback port, as python/chatbot_server.py does.
 const loopbackOrigin = /^http(s)?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
-const cloudRunOrigin = /^https:\/\/.*\.run\.app$/;
+
+// PaaS providers assign the public hostname, so only the registrable suffix is
+// predictable. Anchored on the suffix to accept both, without opening CORS to
+// arbitrary HTTPS hosts.
+const hostedOrigin = /^https:\/\/([a-z0-9-]+\.)*(run\.app|onrender\.com)$/;
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || loopbackOrigin.test(origin) || cloudRunOrigin.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || loopbackOrigin.test(origin) || hostedOrigin.test(origin)) {
       callback(null, true);
       return;
     }
