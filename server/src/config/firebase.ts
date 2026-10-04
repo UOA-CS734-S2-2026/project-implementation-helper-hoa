@@ -1,12 +1,15 @@
-import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// The service account is the server tier's own credential, so it lives inside
-// server/ next to the code that uses it (see server/.env.example).
+// The service account is the server tier's own credential. It can be provided in
+// three ways (in order of preference):
+// 1. GOOGLE_APPLICATION_CREDENTIALS env var pointing to a JSON key file
+// 2. Application Default Credentials (Cloud Run, GCP metadata service)
+// 3. Local file at server/service-account.json (for local development)
 //
 // Resolved relative to this module rather than process.cwd(): every npm script
 // runs from server/, but `npx tsx server/src/scripts/seed.ts` from the project
@@ -14,16 +17,18 @@ import { fileURLToPath } from 'url';
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const serviceAccountPath = path.resolve(moduleDir, '..', '..', 'service-account.json');
 
-if (!fs.existsSync(serviceAccountPath)) {
-  throw new Error(
-    `Service account key not found at ${serviceAccountPath}. ` +
-    'Place service-account.json in the server/ folder (see server/.env.example).',
-  );
+let credential;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  credential = cert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+} else if (fs.existsSync(serviceAccountPath)) {
+  credential = cert(serviceAccountPath);
+} else {
+  credential = applicationDefault();
 }
 
 const app = !getApps().length
   ? initializeApp({
-      credential: cert(serviceAccountPath),
+      credential,
     })
   : getApp();
 
