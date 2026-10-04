@@ -21,9 +21,16 @@ if (!fs.existsSync(serviceAccountPath)) {
   );
 }
 
+const serviceAccount: { project_id?: unknown } = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+if (typeof serviceAccount.project_id !== 'string' || !serviceAccount.project_id) {
+  throw new Error('The Firebase service account must contain a project_id.');
+}
+export const firebaseProjectId = serviceAccount.project_id;
+
 const app = !getApps().length
   ? initializeApp({
       credential: cert(serviceAccountPath),
+      projectId: firebaseProjectId,
     })
   : getApp();
 

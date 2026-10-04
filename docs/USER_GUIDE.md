@@ -21,6 +21,24 @@ A bottom navigation bar (or main menu) switches between **Home**, **Inventory**,
 4. Tap an alert to jump straight to that product's entry on the Inventory page.
 5. Check the **Quick Metrics** tiles (total products, low-stock count, top seller) for a fast overview without opening other pages.
 
+### Android push alerts
+
+Sign in and allow notification permission to receive low-stock and expiry alerts
+even with the app closed. All staff roles can receive them. Low stock starts at
+the product's reorder point; expiry alerts start within seven days, escalating
+within two days or after expiry. The backend must remain running.
+
+Use **Settings > Push notifications** to turn alerts on/off for this phone and
+check permission/registration status. The choice is saved across app restarts.
+Signing out disables delivery to this phone. Tap a system notification (or
+**View** on a foreground banner) to open Home inventory alerts.
+
+Unchanged conditions do not produce repeat notifications. Replenishing stock
+and later going low again, reaching a more severe threshold, or changing the
+nearest expiring batch date can produce another alert. Android force-stop
+prevents notifications until you reopen the app; normal backgrounding or removal
+from Recents does not require the app to keep running.
+
 ---
 
 ## 2. Inventory Page

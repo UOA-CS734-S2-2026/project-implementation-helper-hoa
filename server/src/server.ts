@@ -18,6 +18,11 @@ import { ConfirmedInvoice } from './types';
 import { createInventoryAlertRoutes } from './routes/inventory-alerts.routes';
 import { InventoryAlertService } from './services/inventory-alert.service';
 import { createAdminRoutes } from './routes/admin.routes';
+import { getMessaging } from 'firebase-admin/messaging';
+import firebase, { db } from './config/firebase';
+import { FirestorePushRepository } from './store/push-firestore';
+import { PushNotificationService } from './services/push-notification.service';
+import { createPushRoutes } from './routes/push.routes';
 
 const app = express();
 const port = Number(Number(process.env.PORT)) || 3000;
@@ -29,6 +34,12 @@ const userService = new UserService(store);
 const aiService = new AIService();
 const authService = new AuthService();
 const inventoryAlertService = new InventoryAlertService(store);
+const pushRepository = new FirestorePushRepository(store);
+const pushService = new PushNotificationService(
+  () => inventoryService.getInventoryAlerts(),
+  pushRepository,
+  (message) => getMessaging(firebase).send(message),
+);
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173,http://localhost:3000,http://localhost:8080')
   .split(',')
@@ -62,6 +73,7 @@ app.use(
 app.use('/invoices', createInvoiceRoutes(invoiceService, store));
 app.use('/users', createUserRoutes(userService, store));
 app.use('/auth', createAuthRoutes(authService, store));
+app.use('/push', createPushRoutes(pushRepository, store));
 app.use('/api/ai', createAIRoutes(aiService));
 
 app.post(
@@ -102,7 +114,20 @@ app.post(
 app.use(globalErrorHandler);
 
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Helper Hoa API is running at http://localhost:${port}`);
 });
 
+const scan = () => {
+  void pushService.scan().catch((error) => console.error('Inventory push scan failed:', error));
+};
+// Firestore changes cover API, admin, invoice, and direct database writes.
+const stopWatching = db.collection('products').onSnapshot(scan, (error) => {
+  console.error('Inventory push listener failed; periodic scans remain active:', error);
+});
+const interval = setInterval(scan, 60_000);
+scan();
+server.on('close', () => {
+  stopWatching();
+  clearInterval(interval);
+});

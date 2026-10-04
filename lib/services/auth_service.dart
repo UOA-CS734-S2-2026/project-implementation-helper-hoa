@@ -39,6 +39,7 @@ class AuthController extends ChangeNotifier {
   /// Guards against several concurrent callers each kicking off their own
   /// refresh (e.g. a chat request and a scan at the same time).
   Future<bool>? _inFlightRefresh;
+  Future<void> Function()? beforeSignOut;
 
   bool get isSignedIn => _idToken != null;
   String? get idToken => _idToken;
@@ -108,6 +109,7 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    await beforeSignOut?.call();
     _idToken = null;
     _refreshToken = null;
     _expiresAt = null;

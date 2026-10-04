@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/inventory_alert_service.dart';
+import '../services/push_notification_service.dart';
 import '../theme_extensions.dart';
 import 'inventory_page.dart';
 
@@ -18,11 +19,25 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _alertsFuture = _alertService.fetchAlerts();
+    PushNotificationService.instance.inventoryChanges.addListener(_onPushAlert);
+  }
+
+  void _onPushAlert() {
+    _reloadAlerts();
+  }
+
+  @override
+  void dispose() {
+    PushNotificationService.instance.inventoryChanges
+        .removeListener(_onPushAlert);
+    super.dispose();
   }
 
   Future<void> _reloadAlerts() async {
     final future = _alertService.fetchAlerts();
-    setState(() => _alertsFuture = future);
+    setState(() {
+      _alertsFuture = future;
+    });
     try {
       await future;
     } catch (_) {

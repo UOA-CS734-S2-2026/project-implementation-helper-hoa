@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme_controller.dart';
+import '../services/push_notification_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -11,7 +12,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool pushNotifications = true;
+  bool _updatingPush = false;
   bool emailAlerts = true;
   bool biometricLogin = true;
 
@@ -88,13 +89,22 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingsCard(
                 title: 'Preferences',
                 children: [
-                  SwitchListTile(
-                    value: pushNotifications,
-                    onChanged: (value) => setState(() => pushNotifications = value),
-                    activeThumbColor: const Color(0xFF4E6CD6),
-                    title: const Text('Push notifications'),
-                    subtitle: const Text('Alerts for stock and sales'),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ListenableBuilder(
+                    listenable: PushNotificationService.instance,
+                    builder: (context, _) {
+                      final push = PushNotificationService.instance;
+                      return SwitchListTile(
+                        value: push.enabled,
+                        onChanged: !push.supported || _updatingPush
+                            ? null
+                            : _setPushEnabled,
+                        activeThumbColor: const Color(0xFF4E6CD6),
+                        title: const Text('Push notifications'),
+                        subtitle: Text(push.status),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                      );
+                    },
                   ),
                   SwitchListTile(
                     value: emailAlerts,
@@ -225,6 +235,25 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _setPushEnabled(bool enabled) async {
+    setState(() => _updatingPush = true);
+    try {
+      await PushNotificationService.instance.setEnabled(enabled);
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } on StateError catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _updatingPush = false);
+    }
   }
 
   Widget _settingsCard({
