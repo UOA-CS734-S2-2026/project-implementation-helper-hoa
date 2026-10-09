@@ -7,13 +7,23 @@ import { ConfirmedInvoice, InvoiceLineItem, InvoiceRecord, NewProduct, ProductBa
 // ==========================================
 
 
+export function toDate(value: unknown): Date | null {
+  if (value instanceof Timestamp) return value.toDate();
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
 export function toProductBatch(data: any): ProductBatch {
   return {
     batchNumber: data.batchNumber,
     quantity: data.quantity,
     costPrice: data.costPrice,
-    expirationDate: data.expirationDate ? data.expirationDate.toDate() : null as unknown as Date,
-    receivedDate: data.receivedDate ? data.receivedDate.toDate() : new Date(),
+    expirationDate: toDate(data.expirationDate),
+    receivedDate: toDate(data.receivedDate) ?? new Date(),
     vendorId: data.vendorId,
     invoiceNumber: data.invoiceNumber,
   };
@@ -65,8 +75,8 @@ export function toInvoiceRecord(doc: DocumentSnapshot): InvoiceRecord {
   return {
     id: doc.id,
     invoiceNumber: data.invoiceNumber,
-    invoiceDate: data.invoiceDate ? data.invoiceDate.toDate() : null,
-    dueDate: data.dueDate ? data.dueDate.toDate() : null,
+    invoiceDate: toDate(data.invoiceDate),
+    dueDate: toDate(data.dueDate),
     
     vendorId: data.vendorId,
     vendorSnapshot: data.vendorSnapshot || { name: 'Unknown' },
@@ -124,6 +134,20 @@ export function toFirestoreBatch(batch: any) {
   }
 
   return formattedBatch;
+}
+
+/**
+ * Prepares a partial product update for Firestore. Batch dates must be stored
+ * as Timestamps so reads (toProductBatch) can `.toDate()` them; the admin
+ * panel sends dates as plain strings, so they are converted here the same way
+ * toFirestoreBatch does on the create path.
+ */
+export function toFirestoreProductPatch(updates: Partial<NewProduct>): Record<string, unknown> {
+  const patch: Record<string, unknown> = { ...updates };
+  if (Array.isArray(updates.batches)) {
+    patch.batches = updates.batches.map(toFirestoreBatch);
+  }
+  return patch;
 }
 
 export function toFirestoreInvoice(

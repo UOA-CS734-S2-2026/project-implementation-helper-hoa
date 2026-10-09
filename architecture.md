@@ -87,7 +87,7 @@ Only the routes the proxy forwards reach the API; everything else stops at the g
 
 ### 4.1 The panel cannot hold a token
 
-A browser application cannot keep a bearer token secret: anything in JavaScript is readable by the user and by any script on the page. So the panel never receives one. Instead the **Vite dev server** holds a long-lived admin token, loaded once from `.env` at startup, and injects it into every upstream request.
+A browser application cannot keep a bearer token secret: anything in JavaScript is readable by the user and by any script on the page. So the panel never receives one. Instead the **Vite dev server** signs in as the seeded admin through the API (`POST /auth/login`, using `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env`), keeps the resulting Firebase ID token in the Node process, and injects it into every upstream request. Because an ID token expires after about an hour, the gateway also keeps the refresh token from that sign-in and refreshes the ID token before it lapses, so a long-running dev server never sends an expired token. A pre-minted token can still be supplied as a fallback for a machine with no seeded admin.
 
 The browser only ever holds an opaque session cookie.
 
@@ -100,16 +100,18 @@ sequenceDiagram
     participant API as Express API
 
     BR->>V: POST /__admin/login
-    V->>API: GET /admin/dashboard + Bearer token
+    V->>API: POST /auth/login (ADMIN_EMAIL / ADMIN_PASSWORD)
+    API-->>V: idToken + refreshToken
+    V->>API: GET /admin/dashboard + Bearer idToken
     API-->>V: 200 (token valid)
     V-->>BR: Set-Cookie helperhoa_admin (HttpOnly, SameSite=Strict, 30 min)
     BR->>V: GET /admin/sales (cookie only)
     V->>V: validate session in memory
-    V->>API: GET /admin/sales + Bearer token
+    V->>API: GET /admin/sales + Bearer idToken
     API-->>BR: 200 data
 ```
 
-On sign-in the dev server validates the configured token by calling `/admin/dashboard` with it. Only if that succeeds does it mint a session: **32 random bytes**, hex-encoded, stored in an in-memory `Map`, and returned as an `HttpOnly; SameSite=Strict` cookie with a 30-minute lifetime. Because the cookie is `HttpOnly`, page scripts cannot read it; because it is `SameSite=Strict`, other origins cannot send it.
+On sign-in the dev server asks the API to authenticate it (`POST /auth/login`) and validates the returned ID token by calling `/admin/dashboard` with it. Only if that succeeds does it mint a session: **32 random bytes**, hex-encoded, stored in an in-memory `Map`, and returned as an `HttpOnly; SameSite=Strict` cookie with a 30-minute lifetime. Because the cookie is `HttpOnly`, page scripts cannot read it; because it is `SameSite=Strict`, other origins cannot send it. The ID token is refreshed with `POST /auth/refresh` shortly before it expires, so the cookie can outlive several token rotations.
 
 Every subsequent request to a protected path is checked against that `Map` before being proxied. An absent or expired session is refused with `401` and never reaches Express.
 

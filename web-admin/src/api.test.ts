@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api } from './api';
+import { api, setUnauthorizedHandler } from './api';
 
 describe('admin API client', () => {
   const fetchMock = vi.fn<typeof fetch>();
@@ -9,6 +9,7 @@ describe('admin API client', () => {
   });
 
   afterEach(() => {
+    setUnauthorizedHandler(null);
     vi.unstubAllGlobals();
   });
 
@@ -66,6 +67,29 @@ describe('admin API client', () => {
         body: JSON.stringify({ sku: 'COFFEE' }),
       }),
     );
+  });
+
+  it('notifies the unauthorized handler on 401 and 403 responses only', async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+
+    fetchMock.mockResolvedValueOnce(Response.json(
+      { error: 'Sign in with the configured admin token.' },
+      { status: 401 },
+    ));
+    await expect(api.productBySku('COFFEE')).rejects.toThrow('Sign in with the configured admin token.');
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce(Response.json(
+      { error: 'Forbidden: Invalid or expired token' },
+      { status: 403 },
+    ));
+    await expect(api.productBySku('COFFEE')).rejects.toThrow('Forbidden: Invalid or expired token');
+    expect(onUnauthorized).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockResolvedValueOnce(Response.json({ error: 'Conflict' }, { status: 409 }));
+    await expect(api.createProduct({ sku: 'COFFEE' })).rejects.toThrow('Conflict');
+    expect(onUnauthorized).toHaveBeenCalledTimes(2);
   });
 
   it('handles empty success responses and non-JSON failures', async () => {

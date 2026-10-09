@@ -34,6 +34,9 @@ calls the Express API over HTTP, so all writes go through one place.
 The web client is used for sales and stock updates. Recording a sale reduces that
 product's stock. Once stock reaches the product's reorder point it is flagged on the
 dashboard and in the product list, and staff are notified until the item is restocked.
+Its dev server signs in with the seeded admin account (`ADMIN_EMAIL` / `ADMIN_PASSWORD`
+in root `.env`) and refreshes its Firebase token automatically, so no token has to be
+pasted in by hand.
 
 > The **full architecture**, with diagrams and the reasoning behind each design
 > decision, is in **[architecture.md](architecture.md)**.
@@ -56,7 +59,8 @@ Copy-Item server\.env.example server\.env
 
 - **`.env` (project root)** — `MCP_SECRET`, which both tiers need, plus everything
   Python reads: the UoA gateway key, the Llama Cloud key, and the port and base
-  URL it uses to reach the Express API.
+  URL it uses to reach the Express API. It also holds the `ADMIN_EMAIL` /
+  `ADMIN_PASSWORD` the React admin panel's dev server signs in with.
 - **`server/.env`** — everything the Express server reads: `PORT`,
   `FIREBASE_WEB_API_KEY`, and optional seed-script overrides.
 

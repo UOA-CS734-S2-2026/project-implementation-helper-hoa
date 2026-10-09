@@ -1,5 +1,21 @@
 import type { AdminData, Product, Sale, StaffUser, Vendor } from './types';
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -11,7 +27,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({})) as { error?: string; message?: string };
-    throw new Error(body.error || body.message || `Request failed (${response.status})`);
+    if (response.status === 401 || response.status === 403) unauthorizedHandler?.();
+    throw new ApiError(response.status, body.error || body.message || `Request failed (${response.status})`);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;

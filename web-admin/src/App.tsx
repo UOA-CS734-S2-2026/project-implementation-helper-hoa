@@ -1,11 +1,11 @@
-import { lazy, Suspense, useState, type FormEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   AlertTriangle, ArrowDownRight, ArrowUpRight, Barcode, Boxes, Building2,
   Camera, Check, ChevronDown, CircleDollarSign, ClipboardList, LayoutDashboard,
   LoaderCircle, LogOut, PackagePlus, Pencil, Plus, RefreshCw, Search, ShieldCheck,
   Trash2, Users, X,
 } from 'lucide-react';
-import { api } from './api';
+import { api, setUnauthorizedHandler } from './api';
 import type { AdminData, Product, Sale, StaffUser, Vendor } from './types';
 import './admin.css';
 import logoUrl from '../../assets/team-image.jpg';
@@ -42,6 +42,15 @@ function App() {
   const [dialog, setDialog] = useState<DialogState>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setIdentity(null);
+      setData(emptyData);
+      setNotice({ kind: 'error', text: 'Your session has expired. Please sign in again.' });
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   async function refreshData() {
     setDataLoading(true);

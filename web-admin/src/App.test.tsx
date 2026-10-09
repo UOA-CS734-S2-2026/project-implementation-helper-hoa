@@ -17,9 +17,10 @@ const mocks = vi.hoisted(() => ({
   updateVendor: vi.fn(),
   deleteVendor: vi.fn(),
   createSale: vi.fn(),
+  setUnauthorizedHandler: vi.fn(),
 }));
 
-vi.mock('./api', () => ({ api: mocks }));
+vi.mock('./api', () => ({ api: mocks, setUnauthorizedHandler: mocks.setUnauthorizedHandler }));
 
 import App from './App';
 
@@ -85,6 +86,18 @@ describe('admin console', () => {
 
     expect(await screen.findByText('Admin token was rejected')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument();
+  });
+
+  it('returns to login when the session expires', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with admin token' }));
+    await screen.findByRole('heading', { name: 'Overview' });
+
+    const handleUnauthorized = mocks.setUnauthorizedHandler.mock.calls[0][0] as () => void;
+    handleUnauthorized();
+
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(screen.getByText('Your session has expired. Please sign in again.')).toBeInTheDocument();
   });
 
   it('filters products and signs out', async () => {

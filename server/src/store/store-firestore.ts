@@ -15,7 +15,7 @@ import {
   NewVendor,
   VendorRecord,
 } from '../types';
-import { toFirestoreBatch, toFirestoreProduct, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice, toFirestoreConfirmedInvoice } from './mappers';
+import { toFirestoreBatch, toFirestoreProduct, toFirestoreProductPatch, toProductRecord, toUser, toInvoiceRecord, toFirestoreInvoice, toFirestoreConfirmedInvoice } from './mappers';
 import { HelperHoaStore } from '.';
 
 // ==========================================
@@ -389,9 +389,11 @@ export class FirebaseHoaStore implements HelperHoaStore {
 
   async updateProduct(id: string, updates: Partial<NewProduct>): Promise<ProductRecord> {
     const docRef = db.collection('products').doc(id);
-    
-    // Note: Firestore update() ignores fields not present in the updates object
-    await docRef.update(updates);
+
+    // Firestore update() ignores fields not present in the updates object.
+    // toFirestoreProductPatch converts batch dates to Timestamps so the admin
+    // panel's string dates never land in Firestore raw.
+    await docRef.update(toFirestoreProductPatch(updates));
     
     const updatedProduct = await this.product(id);
     if (!updatedProduct) {
